@@ -105,7 +105,7 @@ public:
             m_program_id = 0;
         }
     }
-    void use()
+    void use() const
     {
         glUseProgram(m_program_id);
     }
@@ -189,7 +189,7 @@ public:
         }
         m_num_indices = 0;
     }
-    void use()
+    void use() const
     {
         glBindVertexArray(m_vao);
     }
@@ -202,54 +202,9 @@ private:
     int m_num_indices = 0;
 };
 
-class Mesh
+inline void draw(const VertexArray& vao, const Program& shader_program)
 {
-public:
-    Mesh()
-    {
-        float m_vertices[9] = {
-            -0.5f, -0.5f, 0.0f,
-             0.5f, -0.5f, 0.0f,
-             0.0f,  0.5f, 0.0f
-        };
-        unsigned int m_indices[3] = {
-            0, 1, 2
-        };
-
-        m_vao = VertexArray(m_vertices, 9, m_indices, 3);
-        m_program = Program({ vertex_shader_source }, { fragment_shader_source });
-    }
-
-    void draw()
-    {
-        auto error = glGetError();
-        m_program.use();
-        m_vao.use();
-        glDrawElements(GL_TRIANGLES, m_vao.num_indices(), GL_UNSIGNED_INT, nullptr);
-    }
-
-private:
-    VertexArray m_vao;
-    Program m_program;
-
-    static const char* const vertex_shader_source;
-    static const char* const fragment_shader_source;
-};
-
-inline const char* const Mesh::vertex_shader_source =
-    "#version 330 core\n"
-    "layout(location = 0) in vec3 aPos;"
-
-    "void main()"
-    "{"
-    "gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);"
-    "};";
-
-inline const char* const Mesh::fragment_shader_source =
-    "#version 330 core\n"
-    "out vec4 FragColor;"
-
-    "void main()"
-    "{"
-    "FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);"
-    "}";
+    vao.use();
+    shader_program.use();
+    glDrawElements(GL_TRIANGLES, vao.num_indices(), GL_UNSIGNED_INT, nullptr);
+}
