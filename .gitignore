@@ -397,6 +397,7 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
-# Third party libs are huge, copy the external folder manually to avoid this
+# Third party libs and assets are huge, copy the external folder manually to avoid this
 
 external/**
+assets/**
