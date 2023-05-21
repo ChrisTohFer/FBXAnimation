@@ -2,6 +2,8 @@
 
 #include "glad/glad.h"
 
+#include <iostream>
+
 template<GLuint ShaderType>
 class Shader
 {
@@ -201,6 +203,8 @@ private:
     GLuint m_ibo = 0;
     int m_num_indices = 0;
 };
+
+//inline funcs
 
 inline void draw(const VertexArray& vao, const Program& shader_program)
 {

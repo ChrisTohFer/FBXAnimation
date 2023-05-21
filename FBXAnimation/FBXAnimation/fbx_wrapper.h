@@ -12,8 +12,7 @@ public:
     FBXSceneWrapper(FBXSceneWrapper&& other) noexcept;
     FBXSceneWrapper& operator=(FBXSceneWrapper&& rhs) noexcept;
     bool is_valid() const { return scene != nullptr; }
-
-
+    const FbxScene* get_scene() const { return scene; }
 
 private:
     FbxScene* scene = nullptr;
