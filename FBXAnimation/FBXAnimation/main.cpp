@@ -138,9 +138,11 @@ int main()
         "#version 330 core\n"
         "layout(location = 0) in vec3 aPos;"
 
+        "uniform mat4 camera;"
+
         "void main()"
         "{"
-        "gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);"
+        "gl_Position = camera * vec4(aPos.x, aPos.y, aPos.z, 1.0);"
         "};";
 
     const char* fragment_shader_source =
@@ -152,6 +154,7 @@ int main()
         "FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);"
         "}";
     Program shader(vertex_shader_source, fragment_shader_source);
+
     while (true)
     {
         glfwPollEvents();

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "geometry.h"
+
 #include "glad/glad.h"
 
 #include <iostream>
@@ -112,6 +114,12 @@ public:
         glUseProgram(m_program_id);
     }
 
+    void set_uniform(const char* name, const geom::Matrix44& matrix) const
+    {
+        unsigned int location = glGetUniformLocation(m_program_id, name);
+        glUniformMatrix4fv(location, 1, GL_FALSE, matrix.values);
+    }
+
     bool valid() const { return m_program_id != 0; }
     GLuint id() const { return m_program_id; }
 
@@ -204,11 +212,32 @@ private:
     int m_num_indices = 0;
 };
 
+//vv MOVE THIS vv
+
+struct Camera
+{
+    geom::Vector3 translation = -geom::Vector3::unit_z();
+
+    geom::Matrix44 calculate_projection_matrix()
+    {
+        return
+            geom::create_projection_matrix_44(1.f, 3.14159f * 0.5f, 0.1f, 100.f) *
+            geom::create_translation_matrix_44(-translation);
+    }
+};
+
+inline Camera g_camera;
+
+//^^ MOVE THIS ^^
+
 //inline funcs
 
 inline void draw(const VertexArray& vao, const Program& shader_program)
 {
-    vao.use();
+    geom::Matrix44 projection_matrix = g_camera.calculate_projection_matrix();
     shader_program.use();
+    shader_program.set_uniform("camera", projection_matrix);
+    vao.use();
+    auto test = glGetError();
     glDrawElements(GL_TRIANGLES, vao.num_indices(), GL_UNSIGNED_INT, nullptr);
 }

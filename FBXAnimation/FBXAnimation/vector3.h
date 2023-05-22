@@ -30,6 +30,15 @@ namespace geom
 
     //non-member inline functions
 
+    inline Vector3 operator-(Vector3 value)
+    {
+        return {
+            -value.x,
+            -value.y,
+            -value.z
+        };
+    }
+
     inline Vector3 operator+(Vector3 lhs, Vector3 rhs)
     {
         return {

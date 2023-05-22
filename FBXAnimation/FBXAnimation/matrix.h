@@ -199,10 +199,27 @@ namespace geom
     Matrix44 Matrix44::identity()
     {
         Matrix44 result;
+
         result.get(0, 0) = 1.f;
+        result.get(1, 0) = 0.f;
+        result.get(2, 0) = 0.f;
+        result.get(3, 0) = 0.f;
+
+        result.get(0, 1) = 0.f;
         result.get(1, 1) = 1.f;
+        result.get(2, 1) = 0.f;
+        result.get(3, 1) = 0.f;
+
+        result.get(0, 2) = 0.f;
+        result.get(1, 2) = 0.f;
         result.get(2, 2) = 1.f;
+        result.get(3, 2) = 0.f;
+
+        result.get(0, 3) = 0.f;
+        result.get(1, 3) = 0.f;
+        result.get(2, 3) = 0.f;
         result.get(3, 3) = 1.f;
+
         return result;
     }
 
@@ -226,9 +243,23 @@ namespace geom
     Matrix34 Matrix34::identity()
     {
         Matrix34 result;
+
         result.get(0, 0) = 1.f;
+        result.get(1, 0) = 0.f;
+        result.get(2, 0) = 0.f;
+
+        result.get(0, 1) = 0.f;
         result.get(1, 1) = 1.f;
+        result.get(2, 1) = 0.f;
+
+        result.get(0, 2) = 0.f;
+        result.get(1, 2) = 0.f;
         result.get(2, 2) = 1.f;
+
+        result.get(0, 3) = 0.f;
+        result.get(1, 3) = 0.f;
+        result.get(2, 3) = 0.f;
+
         return result;
     }
 
