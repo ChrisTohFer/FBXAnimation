@@ -6,6 +6,7 @@
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
+#include <chrono>
 #include <iostream>
 #include <vector>
 
@@ -72,7 +73,7 @@ IndexedVertices<geom::Vector3> get_vertices_from_fbx(const FBXSceneWrapper& fbx_
     for (int i = 0; i < polygon_count; ++i)
     {
         int num_polygon_vertices = mesh->GetPolygonSize(i);
-        _ASSERT(num_polygon_vertices != 3);
+        _ASSERT(num_polygon_vertices == 3);
 
         vertices.indices.push_back(mesh->GetPolygonVertex(i, 0));
         vertices.indices.push_back(mesh->GetPolygonVertex(i, 1));
@@ -81,6 +82,41 @@ IndexedVertices<geom::Vector3> get_vertices_from_fbx(const FBXSceneWrapper& fbx_
 
     return vertices;
 }
+
+//vv TEMP vv
+
+float g_timestep = 0.f;
+bool g_w_press = false;
+bool g_s_press = false;
+bool g_a_press = false;
+bool g_d_press = false;
+bool g_space_press = false;
+bool g_control_press = false;
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    bool* key_flag = nullptr;
+    switch (key)
+    {
+    case GLFW_KEY_W: key_flag = &g_w_press; break;
+    case GLFW_KEY_S: key_flag = &g_s_press; break;
+    case GLFW_KEY_A: key_flag = &g_a_press; break;
+    case GLFW_KEY_D: key_flag = &g_d_press; break;
+    case GLFW_KEY_SPACE: key_flag = &g_space_press; break;
+    case GLFW_KEY_LEFT_CONTROL: key_flag = &g_control_press; break;
+    default: return;
+    }
+
+    if (action == GLFW_PRESS)
+    {
+        *key_flag = true;
+    }
+    else if (action == GLFW_RELEASE)
+    {
+        *key_flag = false;
+    }
+}
+
+//^^ TEMP ^^
 
 int main()
 {
@@ -100,6 +136,9 @@ int main()
     }
     glfwMakeContextCurrent(window);
 
+    
+    glfwSetKeyCallback(window, key_callback);
+
     //opengl
     int version = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
     if (version == 0) {
@@ -109,7 +148,7 @@ int main()
     printf("Loaded OpenGL\n");
 
     //setup draw info/assets
-#if false
+#if true
     FBXManagerWrapper fbx_manager;
     FBXSceneWrapper test = fbx_manager.load("../../assets/fbx/cubeman_v2.fbx");
     auto vertices = get_vertices_from_fbx(test);
@@ -157,9 +196,19 @@ int main()
 
     while (true)
     {
+        using namespace std::chrono_literals;
+        auto update_start_time = std::chrono::system_clock::now();
+
         glfwPollEvents();
         if (glfwWindowShouldClose(window))
             break;
+
+        if (g_w_press) g_camera.translation.z += 1.f * g_timestep;
+        if (g_s_press) g_camera.translation.z -= 1.f * g_timestep;
+        if (g_a_press) g_camera.translation.x -= 1.f * g_timestep;
+        if (g_d_press) g_camera.translation.x += 1.f * g_timestep;
+        if (g_space_press) g_camera.translation.y += 1.f * g_timestep;
+        if (g_control_press) g_camera.translation.y -= 1.f * g_timestep;
 
         //glEnable(GL_DEPTH_TEST);
 
@@ -169,6 +218,9 @@ int main()
         draw(vao, shader);
 
         glfwSwapBuffers(window);
+
+        auto duration = std::chrono::system_clock::now() - update_start_time;
+        g_timestep = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count() * 0.001f;
     }
 
     //close

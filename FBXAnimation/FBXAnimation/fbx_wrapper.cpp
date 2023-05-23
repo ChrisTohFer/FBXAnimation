@@ -65,6 +65,10 @@ FBXSceneWrapper FBXManagerWrapper::load(const char* filename)
     importer->Import(scene);
     importer->Destroy();
 
+    //only want to draw triangles and not quads, so convert the scene immediately
+    FbxGeometryConverter converter(m_manager);
+    converter.Triangulate(scene, true);
+
     result.scene = scene;
     return result;
 }
