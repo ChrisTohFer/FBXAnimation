@@ -129,6 +129,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 void resize_callback(GLFWwindow* window, int width, int height)
 {
     glViewport(0, 0, width, height);
+    g_camera.aspect_ratio = (float)width / height;
 }
 
 //^^ TEMP ^^
@@ -142,6 +143,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     GLFWwindow* window = glfwCreateWindow(1000, 500, "LearnOpenGL", NULL, NULL);
+    g_camera.aspect_ratio = 1000.f / 500.f;
 
     if (window == nullptr)
     {
@@ -170,9 +172,9 @@ int main()
     auto vertices = get_vertices_from_fbx(test);
     VertexArray vao(
         (float*)vertices.vertices.data(),
-        vertices.vertices.size() * 3,
+        (int)vertices.vertices.size() * 3,
         vertices.indices.data(),
-        vertices.indices.size());
+        (int)vertices.indices.size());
 #else
     float vertices[9] = {
         -0.5f, -0.5f, 0.0f,
@@ -230,6 +232,10 @@ int main()
             geom::create_z_rotation_matrix_44(g_camera.rotation_euler.z) *
             geom::create_y_rotation_matrix_44(g_camera.rotation_euler.y) *
             geom::create_x_rotation_matrix_44(g_camera.rotation_euler.x);
+
+        auto test_mat = rotation_transform * rotation_transform.inverse();
+        auto t2 = geom::Matrix<2, 2>{ {0.5f, 0.f, 0.f, 0.5f} };
+        auto test_mat2 = t2 * t2.inverse();
 
         if (g_w_press) g_camera.translation += rotation_transform * geom::Vector3::unit_z() * g_timestep;
         if (g_s_press) g_camera.translation -= rotation_transform * geom::Vector3::unit_z() * g_timestep;
