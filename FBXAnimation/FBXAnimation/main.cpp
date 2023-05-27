@@ -54,6 +54,8 @@ IndexedVertices<geom::Vector3> get_vertices_from_fbx(const FBXSceneWrapper& fbx_
 
     IndexedVertices<geom::Vector3> vertices;
     
+    auto transform = geom::create_scale_matrix_44({ 1.f, 1.f, -1.f });
+
     //get vertices
     FbxVector4* control_points = mesh->GetControlPoints();
     int control_points_count = mesh->GetControlPointsCount();
@@ -61,7 +63,7 @@ IndexedVertices<geom::Vector3> get_vertices_from_fbx(const FBXSceneWrapper& fbx_
     for (int i = 0; i < control_points_count; ++i)
     {
         auto& point = control_points[i];
-        vertices.vertices.push_back(geom::Vector3{
+        vertices.vertices.push_back(transform * geom::Vector3{
             (float)point.mData[0],
             (float)point.mData[1],
             (float)point.mData[2]
@@ -86,6 +88,10 @@ IndexedVertices<geom::Vector3> get_vertices_from_fbx(const FBXSceneWrapper& fbx_
 //vv TEMP vv
 
 float g_timestep = 0.f;
+bool g_up_press = false;
+bool g_down_press = false;
+bool g_left_press = false;
+bool g_right_press = false;
 bool g_w_press = false;
 bool g_s_press = false;
 bool g_a_press = false;
@@ -97,6 +103,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     bool* key_flag = nullptr;
     switch (key)
     {
+    case GLFW_KEY_UP: key_flag = &g_up_press; break;
+    case GLFW_KEY_DOWN: key_flag = &g_down_press; break;
+    case GLFW_KEY_LEFT: key_flag = &g_left_press; break;
+    case GLFW_KEY_RIGHT: key_flag = &g_right_press; break;
     case GLFW_KEY_W: key_flag = &g_w_press; break;
     case GLFW_KEY_S: key_flag = &g_s_press; break;
     case GLFW_KEY_A: key_flag = &g_a_press; break;
@@ -114,6 +124,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     {
         *key_flag = false;
     }
+}
+
+void resize_callback(GLFWwindow* window, int width, int height)
+{
+    glViewport(0, 0, width, height);
 }
 
 //^^ TEMP ^^
@@ -138,6 +153,7 @@ int main()
 
     
     glfwSetKeyCallback(window, key_callback);
+    glfwSetWindowSizeCallback(window, resize_callback);
 
     //opengl
     int version = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -203,12 +219,24 @@ int main()
         if (glfwWindowShouldClose(window))
             break;
 
-        if (g_w_press) g_camera.translation.z += 1.f * g_timestep;
-        if (g_s_press) g_camera.translation.z -= 1.f * g_timestep;
-        if (g_a_press) g_camera.translation.x -= 1.f * g_timestep;
-        if (g_d_press) g_camera.translation.x += 1.f * g_timestep;
-        if (g_space_press) g_camera.translation.y += 1.f * g_timestep;
-        if (g_control_press) g_camera.translation.y -= 1.f * g_timestep;
+        
+
+        if (g_left_press) g_camera.rotation_euler.y -= 1.f * g_timestep;
+        if (g_right_press) g_camera.rotation_euler.y += 1.f * g_timestep;
+        if (g_up_press) g_camera.rotation_euler.x -= 1.f * g_timestep;
+        if (g_down_press) g_camera.rotation_euler.x += 1.f * g_timestep;
+        
+        auto rotation_transform =
+            geom::create_z_rotation_matrix_44(g_camera.rotation_euler.z) *
+            geom::create_y_rotation_matrix_44(g_camera.rotation_euler.y) *
+            geom::create_x_rotation_matrix_44(g_camera.rotation_euler.x);
+
+        if (g_w_press) g_camera.translation += rotation_transform * geom::Vector3::unit_z() * g_timestep;
+        if (g_s_press) g_camera.translation -= rotation_transform * geom::Vector3::unit_z() * g_timestep;
+        if (g_a_press) g_camera.translation -= rotation_transform * geom::Vector3::unit_x() * g_timestep;
+        if (g_d_press) g_camera.translation += rotation_transform * geom::Vector3::unit_x() * g_timestep;
+        if (g_space_press) g_camera.translation += rotation_transform * geom::Vector3::unit_y() * g_timestep;
+        if (g_control_press) g_camera.translation -= rotation_transform * geom::Vector3::unit_y() * g_timestep;
 
         //glEnable(GL_DEPTH_TEST);
 

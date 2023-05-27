@@ -217,11 +217,16 @@ private:
 struct Camera
 {
     geom::Vector3 translation = -geom::Vector3::unit_z();
+    geom::Vector3 rotation_euler = geom::Vector3::zero();
+    float aspect_ratio = 1.f;
 
     geom::Matrix44 calculate_projection_matrix()
     {
         return
-            geom::create_projection_matrix_44(1.f, 3.14159f * 0.5f, 0.1f, 100.f) *
+            geom::create_projection_matrix_44(aspect_ratio, 3.14159f * 0.5f, 0.1f, 100.f) *
+            geom::create_x_rotation_matrix_44(-rotation_euler.x) *
+            geom::create_y_rotation_matrix_44(-rotation_euler.y) *
+            geom::create_z_rotation_matrix_44(-rotation_euler.z) *
             geom::create_translation_matrix_44(-translation);
     }
 };
