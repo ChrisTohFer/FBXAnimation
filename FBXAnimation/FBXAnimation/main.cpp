@@ -10,6 +10,20 @@
 #include <iostream>
 #include <vector>
 
+struct SkinnedVertex
+{
+    geom::Vector3 pos;
+    int skinned_bone_index;
+
+    static void apply_attributes()
+    {
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(SkinnedVertex), (void*)0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 1, GL_INT, GL_FALSE, sizeof(SkinnedVertex), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+    }
+};
+
 template<typename Vertex>
 struct IndexedVertices
 {
@@ -17,7 +31,7 @@ struct IndexedVertices
     std::vector<unsigned int> indices;
 };
 
-IndexedVertices<geom::Vector3> get_vertices_from_fbx(const FBXSceneWrapper& fbx_scene_wrapper)
+IndexedVertices<SkinnedVertex> get_vertices_from_fbx(const FBXSceneWrapper& fbx_scene_wrapper)
 {
     const FbxScene* scene = fbx_scene_wrapper.get_scene();
     _ASSERT(scene != nullptr);
@@ -52,22 +66,59 @@ IndexedVertices<geom::Vector3> get_vertices_from_fbx(const FBXSceneWrapper& fbx_
         return {};
     }
 
-    IndexedVertices<geom::Vector3> vertices;
+    IndexedVertices<SkinnedVertex> vertices;
     
-    auto transform = geom::create_scale_matrix_44({ 1.f, 1.f, -1.f });
+    //face the mesh towards z with y upwards, then invert z
+    //scene->GetGlobalSettings().getaxis
+    auto transform = geom::create_x_rotation_matrix_44(3.14159f * 0.5f) * geom::create_scale_matrix_44({ 1.f, 1.f, -1.f });
 
     //get vertices
+    const FbxSkin* skin = nullptr;
+    if (mesh->GetDeformerCount(FbxDeformer::EDeformerType::eSkin) > 0)
+    {
+        skin = static_cast<const FbxSkin*>(mesh->GetDeformer(0, FbxDeformer::EDeformerType::eSkin));
+    }
+
     FbxVector4* control_points = mesh->GetControlPoints();
     int control_points_count = mesh->GetControlPointsCount();
     vertices.vertices.reserve(control_points_count);
-    for (int i = 0; i < control_points_count; ++i)
+    for (int control_point_index = 0; control_point_index < control_points_count; ++control_point_index)
     {
-        auto& point = control_points[i];
-        vertices.vertices.push_back(transform * geom::Vector3{
+        int skinned_index = 0;
+        if (skin != nullptr)
+        {
+            int cluster_count = skin->GetClusterCount();
+            double skinned_weight = 0.f;
+            for (int cluster_index = 0; cluster_index < cluster_count; ++cluster_index)
+            {
+                const FbxCluster* cluster = skin->GetCluster(cluster_index);
+                int control_point_indices_count = cluster->GetControlPointIndicesCount();
+                int* control_point_indices = cluster->GetControlPointIndices();
+                double* control_point_weights = cluster->GetControlPointWeights();
+                for (int k = 0; k < control_point_indices_count; ++k)
+                {
+                    if (control_point_indices[k] == control_point_index)
+                    {
+                        if (control_point_weights[k] > skinned_weight)
+                        {
+                            skinned_weight = control_point_weights[k];
+                            skinned_index = cluster_index;
+                            break;
+                        }
+                    }
+                }
+
+            }
+        }
+
+        auto& point = control_points[control_point_index];
+        vertices.vertices.push_back({ transform * geom::Vector3{
             (float)point.mData[0],
             (float)point.mData[1],
-            (float)point.mData[2]
+            (float)point.mData[2]},
+            skinned_index
         });
+
     }
 
     //get triangles
@@ -170,9 +221,8 @@ int main()
     FBXManagerWrapper fbx_manager;
     FBXSceneWrapper test = fbx_manager.load("../../assets/fbx/cubeman_v2.fbx");
     auto vertices = get_vertices_from_fbx(test);
-    VertexArray vao(
-        (float*)vertices.vertices.data(),
-        (int)vertices.vertices.size() * 3,
+    VertexArray<SkinnedVertex> vao(
+        VertexBuffer(std::move(vertices.vertices)),
         vertices.indices.data(),
         (int)vertices.indices.size());
 #else

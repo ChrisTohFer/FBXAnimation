@@ -5,7 +5,9 @@
 #include "glad/glad.h"
 
 #include <iostream>
+#include <vector>
 
+//shaders and shader programs
 template<GLuint ShaderType>
 class Shader
 {
@@ -127,26 +129,69 @@ private:
     GLuint m_program_id = 0;
 };
 
+
+//vertex buffers
+template<typename T>
+concept Vertex = alignof(T) == 4 && requires() { T::apply_attributes(); };
+
+template<Vertex VertexType>
+class VertexBuffer
+{
+public:
+    VertexBuffer(const std::vector<VertexType>& vertices)
+    {
+        glGenBuffers(1, &m_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(VertexType) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
+    }
+    ~VertexBuffer()
+    {
+        if (m_vbo != 0)
+        {
+            glDeleteBuffers(1, &m_vbo);
+            m_vbo = 0;
+        }
+    }
+    VertexBuffer(VertexBuffer&& other)
+        : m_vbo(other.m_vbo)
+    {
+        other.m_vbo = 0;
+    }
+    VertexBuffer& operator=(VertexBuffer&& other)
+    {
+        m_vbo = other.m_vbo;
+        other.m_vbo = 0;
+        return *this;
+    }
+
+    void bind() const
+    {
+        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+        VertexType::apply_attributes();
+    }
+private:
+    GLuint m_vbo = 0;
+};
+
+
+//vertex arrays
+template<Vertex VertexType>
 class VertexArray
 {
 public:
     VertexArray() = default;
-    VertexArray(float* vertices, int vertices_count, unsigned int* indices, int indices_count)
+    VertexArray(VertexBuffer<VertexType> vertices, unsigned int* indices, int indices_count)
         : m_num_indices(indices_count)
+        , m_vbo(std::move(vertices))
     {
         glGenVertexArrays(1, &m_vao);
         glBindVertexArray(m_vao);
 
-        glGenBuffers(1, &m_vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(float) * vertices_count, vertices, GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
+        m_vbo.bind();
 
         glGenBuffers(1, &m_ibo);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ibo);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices_count, indices, GL_STATIC_DRAW);
-
     }
     ~VertexArray()
     {
@@ -187,11 +232,6 @@ public:
             glDeleteVertexArrays(1, &m_vao);
             m_vao = 0;
         }
-        if (m_vbo != 0)
-        {
-            glDeleteBuffers(1, &m_vbo);
-            m_vbo = 0;
-        }
         if (m_ibo != 0)
         {
             glDeleteBuffers(1, &m_ibo);
@@ -206,8 +246,8 @@ public:
     int num_indices() const { return m_num_indices; }
 
 private:
+    VertexBuffer<VertexType> m_vbo;
     GLuint m_vao = 0;
-    GLuint m_vbo = 0;   //could be multiple of these
     GLuint m_ibo = 0;
     int m_num_indices = 0;
 };
@@ -220,7 +260,7 @@ struct Camera
     geom::Vector3 rotation_euler = geom::Vector3::zero();
     float aspect_ratio = 1.f;
 
-    geom::Matrix44 calculate_projection_matrix()
+    geom::Matrix44 calculate_camera_matrix()
     {
         return
             geom::create_projection_matrix_44(aspect_ratio, 3.14159f * 0.5f, 0.1f, 100.f) *
@@ -237,12 +277,12 @@ inline Camera g_camera;
 
 //inline funcs
 
-inline void draw(const VertexArray& vao, const Program& shader_program)
+template<Vertex VertexType>
+inline void draw(const VertexArray<VertexType>& vao, const Program& shader_program)
 {
-    geom::Matrix44 projection_matrix = g_camera.calculate_projection_matrix();
+    geom::Matrix44 projection_matrix = g_camera.calculate_camera_matrix();
     shader_program.use();
     shader_program.set_uniform("camera", projection_matrix);
     vao.use();
-    auto test = glGetError();
     glDrawElements(GL_TRIANGLES, vao.num_indices(), GL_UNSIGNED_INT, nullptr);
 }
