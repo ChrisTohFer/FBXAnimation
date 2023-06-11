@@ -1,5 +1,8 @@
+#pragma once
+
 #include "vector3.h"
 #include "matrix.h"
+#include "quaternion.h"
 
 //this file handles combined functionality between vectors, matrices, quaternions
 

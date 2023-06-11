@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <math.h>
 
 namespace geom
@@ -20,8 +21,9 @@ namespace geom
 
         //operations
         //+-*/ operations are defined as non-member functions
-        static float dot(Vector3, Vector3);
-        static Vector3 cross(Vector3, Vector3);
+        static float dot(const Vector3&, const Vector3&);
+        static Vector3 cross(const Vector3&, const Vector3&);
+        static Vector3 interpolate(const Vector3&, const Vector3&, float t);
 
         float magnitude_squared() const;
         float magnitude() const;
@@ -30,7 +32,7 @@ namespace geom
 
     //non-member inline functions
 
-    inline Vector3 operator-(Vector3 value)
+    inline Vector3 operator-(const Vector3& value)
     {
         return {
             -value.x,
@@ -39,7 +41,7 @@ namespace geom
         };
     }
 
-    inline Vector3 operator+(Vector3 lhs, Vector3 rhs)
+    inline Vector3 operator+(const Vector3& lhs, const Vector3& rhs)
     {
         return {
             lhs.x + rhs.x,
@@ -47,7 +49,7 @@ namespace geom
             lhs.z + rhs.z
         };
     }
-    inline Vector3 operator-(Vector3 lhs, Vector3 rhs)
+    inline Vector3 operator-(const Vector3& lhs, const Vector3& rhs)
     {
         return {
             lhs.x - rhs.x,
@@ -55,7 +57,7 @@ namespace geom
             lhs.z - rhs.z
         };
     }
-    inline Vector3 operator*(Vector3 lhs, float rhs)
+    inline Vector3 operator*(const Vector3& lhs, float rhs)
     {
         return {
             lhs.x * rhs,
@@ -63,7 +65,7 @@ namespace geom
             lhs.z * rhs
         };
     }
-    inline Vector3 operator*(float lhs, Vector3 rhs)
+    inline Vector3 operator*(float lhs, const Vector3& rhs)
     {
         return {
             rhs.x * lhs,
@@ -71,7 +73,7 @@ namespace geom
             rhs.z * lhs
         };
     }
-    inline Vector3 operator/(Vector3 lhs, float rhs)
+    inline Vector3 operator/(const Vector3& lhs, float rhs)
     {
         return {
             lhs.x / rhs,
@@ -80,11 +82,11 @@ namespace geom
         };
     }
 
-    inline Vector3 operator+=(Vector3& lhs, Vector3 rhs)
+    inline Vector3 operator+=(Vector3& lhs, const Vector3& rhs)
     {
         return lhs = lhs + rhs;
     }
-    inline Vector3 operator-=(Vector3& lhs, Vector3 rhs)
+    inline Vector3 operator-=(Vector3& lhs, const Vector3& rhs)
     {
         return lhs = lhs - rhs;
     }
@@ -99,7 +101,7 @@ namespace geom
 
     //inline member functions
 
-    inline float Vector3::dot(Vector3 lhs, Vector3 rhs)
+    inline float Vector3::dot(const Vector3& lhs, const Vector3& rhs)
     {
         return
             lhs.x * rhs.x +
@@ -107,12 +109,21 @@ namespace geom
             lhs.z * rhs.z;
     }
 
-    inline Vector3 Vector3::cross(Vector3 lhs, Vector3 rhs)
+    inline Vector3 Vector3::cross(const Vector3& lhs, const Vector3& rhs)
     {
         return {
             lhs.y * rhs.z - lhs.z * rhs.y,
             lhs.z * rhs.x - lhs.x * rhs.z,
             lhs.x * rhs.y - lhs.y * rhs.x
+        };
+    }
+
+    inline Vector3 Vector3::interpolate(const Vector3& v1, const Vector3& v2, float t)
+    {
+        return {
+            std::lerp(v1.x, v2.x, t),
+            std::lerp(v1.y, v2.y, t),
+            std::lerp(v1.z, v2.z, t)
         };
     }
 
