@@ -136,6 +136,69 @@ namespace geom
 
         return result;
     }
+    Matrix44 create_rotation_matrix_from_quaternion(const Quaternion& q)
+    {
+        Matrix44 result;
+
+        //this matrix may be the wrong way around
+
+        result.get(0, 0) = 2.f * (q.w * q.w + q.x * q.x) - 1;
+        result.get(0, 1) = 2.f * (q.x * q.y - q.w * q.z);
+        result.get(0, 2) = 2.f * (q.x * q.z + q.w * q.y);
+        result.get(0, 3) = 0.f;
+
+        result.get(1, 0) = 2.f * (q.x * q.y + q.w * q.z);
+        result.get(1, 1) = 2.f * (q.w * q.w + q.y * q.y) - 1;
+        result.get(1, 2) = 2.f * (q.y * q.z - q.w * q.x);
+        result.get(1, 3) = 0.f;
+
+        result.get(2, 0) = 2.f * (q.x * q.z - q.w * q.y);
+        result.get(2, 1) = 2.f * (q.y * q.z + q.w * q.x);
+        result.get(2, 2) = 2.f * (q.w * q.w + q.z * q.z) - 1;
+        result.get(2, 3) = 0.f;
+
+        result.get(3, 0) = 0.f;
+        result.get(3, 1) = 0.f;
+        result.get(3, 2) = 0.f;
+        result.get(3, 3) = 1.f;
+
+        return result;
+    }
+    Quaternion create_quaternion_From_rotation_matrix(const Matrix44& m)
+    {
+        Quaternion q;
+        float t;
+        if (m.get(2,2) < 0)
+        {
+            if (m.get(0, 0) > m.get(1, 1))
+            {
+                t = 1 + m.get(0, 0) - m.get(1, 1) - m.get(2, 2);
+                q = {t, m.get(0, 1) + m.get(1, 0), m.get(2, 0) + m.get(0, 2), m.get(1, 2) - m.get(2, 1)};
+            }
+            else
+            {
+                t = 1 - m.get(0, 0) + m.get(1, 1) - m.get(2, 2);
+                q = {m.get(0, 1) + m.get(1, 0), t, m.get(1, 2) + m.get(2, 1), m.get(2, 0) - m.get(0, 2)};
+            }
+        }
+        else
+        {
+            if (m.get(0, 0) < -m.get(1, 1))
+            {
+                t = 1 - m.get(0, 0) - m.get(1, 1) + m.get(2, 2);
+                q = {m.get(2, 0) + m.get(0, 2), m.get(1, 2) + m.get(2, 1), t, m.get(0, 1) - m.get(1, 0)};
+            }
+            else
+            {
+                t = 1 + m.get(0, 0) + m.get(1, 1) + m.get(2, 2);
+                q = {m.get(1, 2) - m.get(2, 1), m.get(2, 0) - m.get(0, 2), m.get(0, 1) - m.get(1, 0), t};
+            }
+        }
+        q = q * (0.5f / sqrtf(t));
+
+        return q;
+    }
+
     Matrix44 create_projection_matrix_44(float aspect, float fov, float near, float far)
     {
         Matrix44 result;
