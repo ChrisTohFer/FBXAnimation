@@ -166,6 +166,9 @@ namespace geom
     }
     Quaternion create_quaternion_From_rotation_matrix(const Matrix44& m)
     {
+        //copied from https://d3cw3dd2w32x2b.cloudfront.net/wp-content/uploads/2015/01/matrix-to-quat.pdf
+        //may need some testing
+
         Quaternion q;
         float t;
         if (m.get(2,2) < 0)
