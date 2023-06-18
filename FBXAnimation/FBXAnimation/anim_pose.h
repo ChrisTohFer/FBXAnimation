@@ -112,7 +112,7 @@ namespace anim
 
     //animation
     
-    void Animation::add_keyframe(Pose pose, float time)
+    inline void Animation::add_keyframe(Pose pose, float time)
     {
         //assume that keyframes will be added in order for now
         _ASSERT(time > m_duration);

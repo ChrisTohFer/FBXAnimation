@@ -10,7 +10,7 @@ namespace geom
 {
     //operations
 
-    Vector3 operator*(const Matrix44& mat, Vector3 vec)
+    inline Vector3 operator*(const Matrix44& mat, Vector3 vec)
     {
         Vector3 result;
 
@@ -33,7 +33,7 @@ namespace geom
         return result;
     }
 
-    Vector3 operator*(const Matrix34& mat, Vector3 vec)
+    inline Vector3 operator*(const Matrix34& mat, Vector3 vec)
     {
         Vector3 result;
 
@@ -56,7 +56,7 @@ namespace geom
         return result;
     }
 
-    Vector3 operator*(const Quaternion& q, Vector3 vec)
+    inline Vector3 operator*(const Quaternion& q, Vector3 vec)
     {
         Quaternion q_res = q * Quaternion{ vec.x, vec.y, vec.z, 0.f } *q.inverse();
         return q_res.axis();
@@ -64,7 +64,7 @@ namespace geom
 
     //conversions/constructions
 
-    Matrix34 create_translation_matrix_34(Vector3 vec)
+    inline Matrix34 create_translation_matrix_34(Vector3 vec)
     {
         auto result = Matrix34::identity();
         result.get(0, 3) = vec.x;
@@ -72,7 +72,7 @@ namespace geom
         result.get(2, 3) = vec.z;
         return result;
     }
-    Matrix44 create_translation_matrix_44(Vector3 vec)
+    inline Matrix44 create_translation_matrix_44(Vector3 vec)
     {
         auto result = Matrix44::identity();
         result.get(0, 3) = vec.x;
@@ -80,7 +80,7 @@ namespace geom
         result.get(2, 3) = vec.z;
         return result;
     }
-    Matrix44 create_scale_matrix_44(Vector3 vec)
+    inline Matrix44 create_scale_matrix_44(Vector3 vec)
     {
         auto result = Matrix44::identity();
         result.get(0, 0) = vec.x;
@@ -88,7 +88,7 @@ namespace geom
         result.get(2, 2) = vec.z;
         return result;
     }
-    Matrix44 create_x_rotation_matrix_44(float angle)
+    inline Matrix44 create_x_rotation_matrix_44(float angle)
     {
         auto result = Matrix44::identity();
 
@@ -106,7 +106,7 @@ namespace geom
 
         return result;
     }
-    Matrix44 create_y_rotation_matrix_44(float angle)
+    inline Matrix44 create_y_rotation_matrix_44(float angle)
     {
         auto result = Matrix44::identity();
 
@@ -124,7 +124,7 @@ namespace geom
 
         return result;
     }
-    Matrix44 create_z_rotation_matrix_44(float angle)
+    inline Matrix44 create_z_rotation_matrix_44(float angle)
     {
         auto result = Matrix44::identity();
 
@@ -142,7 +142,7 @@ namespace geom
 
         return result;
     }
-    Matrix44 create_rotation_matrix_from_quaternion(const Quaternion& q)
+    inline Matrix44 create_rotation_matrix_from_quaternion(const Quaternion& q)
     {
         Matrix44 result;
 
@@ -170,7 +170,7 @@ namespace geom
 
         return result;
     }
-    Quaternion create_quaternion_from_rotation_matrix(const Matrix44& m)
+    inline Quaternion create_quaternion_from_rotation_matrix(const Matrix44& m)
     {
         //copied from https://d3cw3dd2w32x2b.cloudfront.net/wp-content/uploads/2015/01/matrix-to-quat.pdf
         //may need some testing
@@ -208,7 +208,7 @@ namespace geom
         return q;
     }
 
-    Matrix44 create_projection_matrix_44(float aspect, float fov, float near, float far)
+    inline Matrix44 create_projection_matrix_44(float aspect, float fov, float near, float far)
     {
         Matrix44 result;
         
@@ -237,7 +237,7 @@ namespace geom
         return result;
     }
 
-    Vector3 translation_from_matrix(const Matrix34& mat)
+    inline Vector3 translation_from_matrix(const Matrix34& mat)
     {
         return {
             mat.get(0, 3),

@@ -144,7 +144,7 @@ namespace geom
     }
 
     template<>
-    float Matrix<1, 1>::determinant() const
+    inline float Matrix<1, 1>::determinant() const
     {
         return values[0];
     }
