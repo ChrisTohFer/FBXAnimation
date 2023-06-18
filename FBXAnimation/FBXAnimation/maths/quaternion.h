@@ -4,6 +4,17 @@
 
 namespace geom
 {
+    //forward declarations
+
+    template<int rows, int columns>
+    struct Matrix;
+    struct Vector3;
+
+    using Matrix44 = Matrix<4, 4>;
+    using Matrix34 = Matrix<3, 4>;
+
+    //struct
+
     struct Quaternion
     {
         float x;
@@ -12,11 +23,27 @@ namespace geom
         float w;
 
         static Quaternion identity() { return { 0,0,0,1.f }; }
+
         Quaternion normalized() const;
         Quaternion inverse() const;
+        Vector3 axis() const;
+        Vector3 axis_normalized() const;
         float angle() const;
     };
 
+    //operators
+
+    Quaternion operator+(const Quaternion& lhs, const Quaternion& rhs);
+    Quaternion operator*(const Quaternion& lhs, const Quaternion& rhs);
+}
+
+//deliberately included after declarations to prevent circular dependency
+#include "matrix.h"
+#include "vector3.h"
+
+//inline definitions
+namespace geom
+{
     //inline operator definitions
 
     inline Quaternion operator+(const Quaternion& lhs, const Quaternion& rhs)
@@ -63,7 +90,7 @@ namespace geom
         return qx + qy + qz + qw;
     }
 
-    //inline definitions
+    //inline member definitions
 
     inline Quaternion operator*(const Quaternion& q, float f)
     {
@@ -84,6 +111,16 @@ namespace geom
     inline Quaternion Quaternion::inverse() const
     {
         return { -x, -y, -z, w };
+    }
+
+    inline Vector3 Quaternion::axis() const
+    {
+        return { x,y,z };
+    }
+
+    inline Vector3 Quaternion::axis_normalized() const
+    {
+        return axis().normalized();
     }
 
     inline float Quaternion::angle() const

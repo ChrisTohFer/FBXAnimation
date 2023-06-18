@@ -158,11 +158,11 @@
   <ItemGroup>
     <ClInclude Include="anim_pose.h" />
     <ClInclude Include="fbx_wrapper.h" />
-    <ClInclude Include="geometry.h" />
-    <ClInclude Include="matrix.h" />
+    <ClInclude Include="maths\geometry.h" />
+    <ClInclude Include="maths\matrix.h" />
+    <ClInclude Include="maths\quaternion.h" />
+    <ClInclude Include="maths\vector3.h" />
     <ClInclude Include="opengl_wrappers.h" />
-    <ClInclude Include="quaternion.h" />
-    <ClInclude Include="vector3.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

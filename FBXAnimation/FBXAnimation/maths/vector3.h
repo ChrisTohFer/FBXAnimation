@@ -5,6 +5,16 @@
 
 namespace geom
 {
+    //forward declarations
+
+    template<int rows, int columns>
+    struct Matrix;
+    struct Quaternion;
+
+    using Matrix44 = Matrix<4, 4>;
+    using Matrix34 = Matrix<3, 4>;
+
+    //struct
 
     struct Vector3
     {
@@ -13,8 +23,8 @@ namespace geom
         float z;
 
         //useful default values
-        static Vector3 zero()   { return { 0.f,0.f,0.f }; }
-        static Vector3 one()    { return { 1.f,1.f,1.f }; }
+        static Vector3 zero() { return { 0.f,0.f,0.f }; }
+        static Vector3 one() { return { 1.f,1.f,1.f }; }
         static Vector3 unit_x() { return { 1.f,0.f,0.f }; }
         static Vector3 unit_y() { return { 0.f,1.f,0.f }; }
         static Vector3 unit_z() { return { 0.f,0.f,1.f }; }
@@ -30,7 +40,32 @@ namespace geom
         Vector3 normalized() const;
     };
 
-    //non-member inline functions
+    //operators
+
+    Vector3 operator-(const Vector3& value);
+
+    Vector3 operator+(const Vector3& lhs, const Vector3& rhs);
+    Vector3& operator+=(Vector3& lhs, const Vector3& rhs);
+
+    Vector3 operator-(const Vector3& lhs, const Vector3& rhs);
+    Vector3& operator-=(Vector3& lhs, const Vector3& rhs);
+
+    Vector3 operator*(const Vector3& lhs, float rhs);
+    Vector3 operator*(float lhs, const Vector3& rhs);
+    Vector3& operator*=(Vector3& lhs, float rhs);
+
+    Vector3 operator/(const Vector3& lhs, float rhs);
+    Vector3& operator/=(Vector3& lhs, float rhs);
+}
+
+//deliberately included after declarations to prevent circular dependency
+#include "matrix.h"
+#include "quaternion.h"
+
+//inline definitions
+namespace geom
+{
+    //inline operator definitions
 
     inline Vector3 operator-(const Vector3& value)
     {
@@ -49,6 +84,11 @@ namespace geom
             lhs.z + rhs.z
         };
     }
+    inline Vector3& operator+=(Vector3& lhs, const Vector3& rhs)
+    {
+        return lhs = lhs + rhs;
+    }
+
     inline Vector3 operator-(const Vector3& lhs, const Vector3& rhs)
     {
         return {
@@ -57,6 +97,11 @@ namespace geom
             lhs.z - rhs.z
         };
     }
+    inline Vector3& operator-=(Vector3& lhs, const Vector3& rhs)
+    {
+        return lhs = lhs - rhs;
+    }
+
     inline Vector3 operator*(const Vector3& lhs, float rhs)
     {
         return {
@@ -73,6 +118,11 @@ namespace geom
             rhs.z * lhs
         };
     }
+    inline Vector3& operator*=(Vector3& lhs, float rhs)
+    {
+        return lhs = lhs * rhs;
+    }
+
     inline Vector3 operator/(const Vector3& lhs, float rhs)
     {
         return {
@@ -81,25 +131,12 @@ namespace geom
             lhs.z / rhs
         };
     }
-
-    inline Vector3 operator+=(Vector3& lhs, const Vector3& rhs)
-    {
-        return lhs = lhs + rhs;
-    }
-    inline Vector3 operator-=(Vector3& lhs, const Vector3& rhs)
-    {
-        return lhs = lhs - rhs;
-    }
-    inline Vector3 operator*=(Vector3& lhs, float rhs)
-    {
-        return lhs = lhs * rhs;
-    }
-    inline Vector3 operator/=(Vector3& lhs, float rhs)
+    inline Vector3& operator/=(Vector3& lhs, float rhs)
     {
         return lhs = lhs / rhs;
     }
 
-    //inline member functions
+    //inline member definitions
 
     inline float Vector3::dot(const Vector3& lhs, const Vector3& rhs)
     {

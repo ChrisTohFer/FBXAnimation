@@ -59,7 +59,7 @@ namespace geom
     Vector3 operator*(const Quaternion& q, Vector3 vec)
     {
         Quaternion q_res = q * Quaternion{ vec.x, vec.y, vec.z, 0.f } *q.inverse();
-        return { q_res.x, q_res.y, q_res.z };
+        return q_res.axis();
     }
 
     //conversions/constructions

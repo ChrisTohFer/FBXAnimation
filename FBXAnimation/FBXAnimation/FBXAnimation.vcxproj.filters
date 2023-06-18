@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\maths">
+      <UniqueIdentifier>{f27e2cc7-63b4-4b5c-bb67-03e8b038ecd0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -26,25 +29,25 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="opengl_wrappers.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="fbx_wrapper.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="vector3.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="matrix.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="geometry.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="anim_pose.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="quaternion.h">
+    <ClInclude Include="maths\quaternion.h">
+      <Filter>Header Files\maths</Filter>
+    </ClInclude>
+    <ClInclude Include="maths\vector3.h">
+      <Filter>Header Files\maths</Filter>
+    </ClInclude>
+    <ClInclude Include="maths\matrix.h">
+      <Filter>Header Files\maths</Filter>
+    </ClInclude>
+    <ClInclude Include="maths\geometry.h">
+      <Filter>Header Files\maths</Filter>
+    </ClInclude>
+    <ClInclude Include="opengl_wrappers.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,7 +1,7 @@
 #include "fbx_wrapper.h"
 #include "opengl_wrappers.h"
 
-#include "vector3.h"
+#include "maths/vector3.h"
 #include "anim_pose.h"
 
 #include "glad/glad.h"
@@ -205,7 +205,7 @@ IndexedVertices<SkinnedVertex> get_vertices_from_fbx(const FBXSceneWrapper& fbx_
                 final_frame = true;
             }
             FbxTime ftime;
-            ftime.SetMilliSeconds(time * 1000.f);
+            ftime.SetMilliSeconds((FbxLongLong)(time * 1000.f));
 
             //create a keyframe pose by looping over all the nodes
             anim::Pose pose;
