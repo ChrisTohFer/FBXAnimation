@@ -51,6 +51,51 @@ namespace
         scene.Destroy();
     }
 
+    geom::Quaternion right_to_left_hand(geom::Quaternion q)
+    {
+        return { -q.x, -q.y, q.z, q.w };
+    }
+
+    geom::Vector3 right_to_left_hand(geom::Vector3 v)
+    {
+        return { v.x, v.y, -v.z };
+    }
+
+    geom::Quaternion get_quaternion_from_fbx_euler(float x, float y, float z, FbxEuler::EOrder order)
+    {
+
+        geom::Matrix44 xrot_mat = geom::create_x_rotation_matrix_44(x);
+        geom::Matrix44 yrot_mat = geom::create_x_rotation_matrix_44(y);
+        geom::Matrix44 zrot_mat = geom::create_x_rotation_matrix_44(z);
+        geom::Matrix44 rot_mat;
+
+        switch (order)
+        {
+        case FbxEuler::EOrder::eOrderXYZ:
+            rot_mat = zrot_mat * yrot_mat * xrot_mat;
+            break;
+        case FbxEuler::EOrder::eOrderXZY:
+            rot_mat = yrot_mat * zrot_mat * xrot_mat;
+            break;
+        case FbxEuler::EOrder::eOrderYZX:
+            rot_mat = xrot_mat * zrot_mat * yrot_mat;
+            break;
+        case FbxEuler::EOrder::eOrderYXZ:
+            rot_mat = zrot_mat * xrot_mat * yrot_mat;
+            break;
+        case FbxEuler::EOrder::eOrderZXY:
+            rot_mat = yrot_mat * xrot_mat * zrot_mat;
+            break;
+        case FbxEuler::EOrder::eOrderZYX:
+            rot_mat = xrot_mat * yrot_mat * zrot_mat;
+            break;
+        default:
+            _ASSERT(false); //wat
+            rot_mat = geom::Matrix44::identity();
+        }
+        return geom::create_quaternion_from_rotation_matrix(rot_mat);
+    }
+
     int get_skin_index(const FbxSkin* skin, int control_point_index)
     {
         int skinned_index = 0;
@@ -88,27 +133,57 @@ namespace
         return skinned_index;
     }
 
-    void process_armature_node(FbxNode& node, anim::Skeleton& skeleton, int parent_index, std::vector<FbxNode*>& nodes_out)
+    void process_armature_nodes(FbxSkin& skin, anim::Skeleton& skeleton, std::vector<FbxNode*>& nodes_out)
     {
-        std::cout << node.GetName() << "\n";
-        int index = (int)skeleton.bones.size();
-        nodes_out.push_back(&node);
-
-        anim::Skeleton::Bone bone;
-        auto global_translation = node.EvaluateGlobalTransform().GetT();
-        auto tx = 0.01f * (float)global_translation[0];
-        auto ty = 0.01f * (float)global_translation[1];
-        auto tz = 0.01f * (float)global_translation[2];
-
-        auto global_translation_converted = /*coordinate_transform **/ geom::Vector3{ tx,ty,tz };
-        skeleton.inv_matrix_stack.push_back(geom::create_translation_matrix_44(global_translation_converted).inverse());
-
-        bone.parent_index = parent_index;
-        skeleton.bones.push_back(bone);
-
-        for (int i = 0; i < node.GetChildCount(); ++i)
+        int cluster_count = skin.GetClusterCount();
+        skeleton.bones.resize(cluster_count);
+        skeleton.inv_matrix_stack.resize(cluster_count);
+        for (int cluster_index = 0; cluster_index < cluster_count; ++cluster_index)
         {
-            process_armature_node(*node.GetChild(i), skeleton, index, nodes_out);
+            FbxCluster* cluster = skin.GetCluster(cluster_index);
+            FbxNode* linked_node = cluster->GetLink();
+            nodes_out.push_back(linked_node);
+
+            //debug
+            std::cout << linked_node->GetName() << "\n";
+            //debug
+
+            anim::Skeleton::Bone bone;
+            auto& global_transform = linked_node->EvaluateGlobalTransform();
+            auto global_translation = global_transform.GetT();
+            auto global_rotation = global_transform.GetR();
+
+            bone.global_transform.translation.x = 0.01f * (float)global_translation[0];
+            bone.global_transform.translation.y = 0.01f * (float)global_translation[1];
+            bone.global_transform.translation.z = 0.01f * (float)global_translation[2];
+            bone.global_transform.translation = right_to_left_hand(bone.global_transform.translation);
+
+            float deg_to_rad = 3.14159f / 180.f;
+            float xrot = deg_to_rad * (float)global_rotation[0];
+            float yrot = deg_to_rad * (float)global_rotation[1];
+            float zrot = deg_to_rad * (float)global_rotation[2];
+            bone.global_transform.rotation = right_to_left_hand(get_quaternion_from_fbx_euler(xrot, yrot, zrot, FbxEuler::EOrder::eOrderXYZ));
+
+            //global_transform
+            skeleton.inv_matrix_stack[cluster_index] = (
+                geom::create_translation_matrix_44(bone.global_transform.translation) *
+                geom::create_rotation_matrix_from_quaternion(bone.global_transform.rotation))
+                .inverse();
+
+            bone.parent_index = -1;
+            for (int i = 0; i < nodes_out.size(); ++i)
+            {
+                auto& node_out = nodes_out[i];
+                if (node_out == linked_node->GetParent())
+                {
+                    bone.parent_index = i;
+                }
+            }
+
+            //we're assuming that clusters always come after their parents, assert to make sure this is true
+            _ASSERT(cluster_index == 0 || bone.parent_index != -1);
+
+            skeleton.bones[cluster_index] = bone;
         }
     }
 
@@ -125,66 +200,37 @@ namespace
         for (int transform_index = 0; transform_index < armature_nodes.size(); ++transform_index)
         {
             FbxNode* node = armature_nodes[transform_index];
-            FbxAnimCurve* curve_trans_x = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_X);
-            FbxAnimCurve* curve_trans_y = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Y);
-            FbxAnimCurve* curve_trans_z = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Z);
-            FbxAnimCurve* curve_rot_x = node->LclRotation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_X);
-            FbxAnimCurve* curve_rot_y = node->LclRotation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Y);
-            FbxAnimCurve* curve_rot_z = node->LclRotation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Z);
+            //FbxAnimCurve* curve_trans_x = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_X);
+            //FbxAnimCurve* curve_trans_y = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Y);
+            //FbxAnimCurve* curve_trans_z = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Z);
+            //FbxAnimCurve* curve_rot_x = node->LclRotation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_X);
+            //FbxAnimCurve* curve_rot_y = node->LclRotation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Y);
+            //FbxAnimCurve* curve_rot_z = node->LclRotation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Z);
+            FbxAnimCurve* curve_trans_x = nullptr;
+            FbxAnimCurve* curve_trans_y = nullptr;
+            FbxAnimCurve* curve_trans_z = nullptr;
+            FbxAnimCurve* curve_rot_x = nullptr;
+            FbxAnimCurve* curve_rot_y = nullptr;
+            FbxAnimCurve* curve_rot_z = nullptr;
 
             anim::Transform& transform = pose.local_transforms[transform_index];
+            
+            //translation
+            transform.translation.x = curve_trans_x ? curve_trans_x->Evaluate(time) : (float)node->LclTranslation.Get()[0];
+            transform.translation.y = curve_trans_y ? curve_trans_y->Evaluate(time) : (float)node->LclTranslation.Get()[1];
+            transform.translation.z = curve_trans_z ? curve_trans_z->Evaluate(time) : (float)node->LclTranslation.Get()[2];
+            transform.translation = right_to_left_hand(transform.translation);
 
-            transform.translation.x = 0.01f * (float)node->LclTranslation.Get()[0];
-            transform.translation.y = 0.01f * (float)node->LclTranslation.Get()[1];
-            transform.translation.z = 0.01f * (float)node->LclTranslation.Get()[2];
+            //rotation
             float deg_to_rad = 3.14159f / 180.f;
-            float xrot = deg_to_rad * (float)node->LclRotation.Get()[0];
-            float yrot = deg_to_rad * (float)node->LclRotation.Get()[1];
-            float zrot = deg_to_rad * (float)node->LclRotation.Get()[2];
-            ////translation
-            //transform.translation.x = curve_trans_x ? curve_trans_x->Evaluate(ftime) : (float)node->LclTranslation.Get()[0];
-            //transform.translation.y = curve_trans_y ? curve_trans_y->Evaluate(ftime) : (float)node->LclTranslation.Get()[1];
-            //transform.translation.z = curve_trans_z ? curve_trans_z->Evaluate(ftime) : (float)node->LclTranslation.Get()[2];
-            //
-            ////rotation
-            //float deg_to_rad = 3.14159f / 180.f;
-            //float xrot = deg_to_rad * (curve_rot_x ? curve_rot_x->Evaluate(ftime) : (float)node->LclRotation.Get()[0]);
-            //float yrot = deg_to_rad * (curve_rot_y ? curve_rot_y->Evaluate(ftime) : (float)node->LclRotation.Get()[1]);
-            //float zrot = deg_to_rad * (curve_rot_z ? curve_rot_z->Evaluate(ftime) : (float)node->LclRotation.Get()[2]);
-            //
+            float xrot = deg_to_rad * (curve_rot_x ? curve_rot_x->Evaluate(time) : (float)node->LclRotation.Get()[0]);
+            float yrot = deg_to_rad * (curve_rot_y ? curve_rot_y->Evaluate(time) : (float)node->LclRotation.Get()[1]);
+            float zrot = deg_to_rad * (curve_rot_z ? curve_rot_z->Evaluate(time) : (float)node->LclRotation.Get()[2]);
+
             FbxEuler::EOrder rot_order;
             node->GetRotationOrder(FbxNode::EPivotSet::eSourcePivot, rot_order);
 
-            geom::Matrix44 xrot_mat = geom::create_x_rotation_matrix_44(xrot);
-            geom::Matrix44 yrot_mat = geom::create_x_rotation_matrix_44(yrot);
-            geom::Matrix44 zrot_mat = geom::create_x_rotation_matrix_44(zrot);
-            geom::Matrix44 rot_mat;
-
-            switch (rot_order)
-            {
-            case FbxEuler::EOrder::eOrderXYZ:
-                rot_mat = zrot_mat * yrot_mat * xrot_mat;
-                break;
-            case FbxEuler::EOrder::eOrderXZY:
-                rot_mat = yrot_mat * zrot_mat * xrot_mat;
-                break;
-            case FbxEuler::EOrder::eOrderYZX:
-                rot_mat = xrot_mat * zrot_mat * yrot_mat;
-                break;
-            case FbxEuler::EOrder::eOrderYXZ:
-                rot_mat = zrot_mat * xrot_mat * yrot_mat;
-                break;
-            case FbxEuler::EOrder::eOrderZXY:
-                rot_mat = yrot_mat * xrot_mat * zrot_mat;
-                break;
-            case FbxEuler::EOrder::eOrderZYX:
-                rot_mat = xrot_mat * yrot_mat * zrot_mat;
-                break;
-            default:
-                _ASSERT(false); //wat
-                rot_mat = geom::Matrix44::identity();
-            }
-            transform.rotation = geom::create_quaternion_from_rotation_matrix(rot_mat);
+            transform.rotation = right_to_left_hand(get_quaternion_from_fbx_euler(xrot, yrot, zrot, rot_order));
         }
 
         return pose;
@@ -264,10 +310,10 @@ namespace
         }
 
         //get skin info
-        const FbxSkin* skin = nullptr;
+        FbxSkin* skin = nullptr;
         if (mesh->GetDeformerCount(FbxDeformer::EDeformerType::eSkin) > 0)
         {
-            skin = static_cast<const FbxSkin*>(mesh->GetDeformer(0, FbxDeformer::EDeformerType::eSkin));
+            skin = static_cast<FbxSkin*>(mesh->GetDeformer(0, FbxDeformer::EDeformerType::eSkin));
         }
 
         //get vertices
@@ -316,7 +362,7 @@ namespace
 
         content.skeleton = std::make_unique<anim::Skeleton>();
         std::vector<FbxNode*> armature_nodes;
-        process_armature_node(*armature, *content.skeleton, -1, armature_nodes);
+        process_armature_nodes(*skin, *content.skeleton, armature_nodes);
 
         //get animations
         process_animations(scene, armature_nodes, content);

@@ -25,6 +25,7 @@ namespace geom
         Matrix<Rows - 1, Columns - 1> submatrix(int row, int col) const;
         Matrix adjugate() const;
         Matrix inverse() const;
+        Matrix transpose() const;
     };
 
     //operators
@@ -181,12 +182,26 @@ namespace geom
             }
         }
 
-        return result;
+        return result.transpose();
     }
 
     template<int Rows, int Columns>
     Matrix<Rows, Columns> Matrix<Rows, Columns>::inverse() const
     {
         return adjugate() / determinant();
+    }
+
+    template<int Rows, int Columns>
+    Matrix<Rows, Columns> Matrix<Rows, Columns>::transpose() const
+    {
+        Matrix result;
+        for (int row = 0; row < Rows; ++row)
+        {
+            for (int column = 0; column < Columns; ++column)
+            {
+                result.get(row, column) = get(column, row);
+            }
+        }
+        return result;
     }
 }
