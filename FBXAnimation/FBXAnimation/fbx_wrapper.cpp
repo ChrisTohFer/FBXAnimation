@@ -65,8 +65,8 @@ namespace
     {
 
         geom::Matrix44 xrot_mat = geom::create_x_rotation_matrix_44(x);
-        geom::Matrix44 yrot_mat = geom::create_x_rotation_matrix_44(y);
-        geom::Matrix44 zrot_mat = geom::create_x_rotation_matrix_44(z);
+        geom::Matrix44 yrot_mat = geom::create_y_rotation_matrix_44(y);
+        geom::Matrix44 zrot_mat = geom::create_z_rotation_matrix_44(z);
         geom::Matrix44 rot_mat;
 
         switch (order)
@@ -200,18 +200,12 @@ namespace
         for (int transform_index = 0; transform_index < armature_nodes.size(); ++transform_index)
         {
             FbxNode* node = armature_nodes[transform_index];
-            //FbxAnimCurve* curve_trans_x = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_X);
-            //FbxAnimCurve* curve_trans_y = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Y);
-            //FbxAnimCurve* curve_trans_z = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Z);
-            //FbxAnimCurve* curve_rot_x = node->LclRotation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_X);
-            //FbxAnimCurve* curve_rot_y = node->LclRotation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Y);
-            //FbxAnimCurve* curve_rot_z = node->LclRotation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Z);
-            FbxAnimCurve* curve_trans_x = nullptr;
-            FbxAnimCurve* curve_trans_y = nullptr;
-            FbxAnimCurve* curve_trans_z = nullptr;
-            FbxAnimCurve* curve_rot_x = nullptr;
-            FbxAnimCurve* curve_rot_y = nullptr;
-            FbxAnimCurve* curve_rot_z = nullptr;
+            FbxAnimCurve* curve_trans_x = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_X);
+            FbxAnimCurve* curve_trans_y = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Y);
+            FbxAnimCurve* curve_trans_z = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Z);
+            FbxAnimCurve* curve_rot_x = node->LclRotation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_X);
+            FbxAnimCurve* curve_rot_y = node->LclRotation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Y);
+            FbxAnimCurve* curve_rot_z = node->LclRotation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Z);
 
             anim::Transform& transform = pose.local_transforms[transform_index];
             
@@ -327,10 +321,11 @@ namespace
             int skinned_index = get_skin_index(skin, control_point_index);
 
             auto point = mesh_transform.MultT(mesh_control_points[control_point_index]);
-            content.vertices.push_back({ geom::Vector3{
-                0.01f * (float)point.mData[0],
-                0.01f * (float)point.mData[1],
-                0.01f * (float)point.mData[2]},
+            content.vertices.push_back({ 
+                right_to_left_hand(geom::Vector3{
+                    0.01f * (float)point.mData[0],
+                    0.01f * (float)point.mData[1],
+                    0.01f * (float)point.mData[2]}),
                 skinned_index
                 });
 
