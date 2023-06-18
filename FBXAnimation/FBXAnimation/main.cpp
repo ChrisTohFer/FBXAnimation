@@ -304,7 +304,7 @@ int main()
         glfwSwapBuffers(window);
 
         auto duration = std::chrono::system_clock::now() - update_start_time;
-        g_timestep = std::chrono::duration_cast<std::chrono::milliseconds>(duration).count() * 0.001f;
+        g_timestep = (float) std::chrono::duration_cast<std::chrono::microseconds>(duration).count() * 0.000001f;
     }
 
     //close
