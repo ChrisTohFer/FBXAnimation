@@ -77,7 +77,7 @@ namespace geom
             -lhs.z * rhs.y,
             lhs.z * rhs.x,
             lhs.z * rhs.w,
-            -lhs.z * rhs.x
+            -lhs.z * rhs.z
         };
         //lhs.w * rhs.(xi, yj, zk, w)
         Quaternion qw = {
