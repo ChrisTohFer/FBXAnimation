@@ -146,8 +146,6 @@ namespace geom
     {
         Matrix44 result;
 
-        //this matrix may be the wrong way around
-
         result.get(0, 0) = 2.f * (q.w * q.w + q.x * q.x) - 1;
         result.get(0, 1) = 2.f * (q.x * q.y - q.w * q.z);
         result.get(0, 2) = 2.f * (q.x * q.z + q.w * q.y);
@@ -173,21 +171,21 @@ namespace geom
     inline Quaternion create_quaternion_from_rotation_matrix(const Matrix44& m)
     {
         //copied from https://d3cw3dd2w32x2b.cloudfront.net/wp-content/uploads/2015/01/matrix-to-quat.pdf
-        //may need some testing
+        //the source uses row vectors, so the matrix defined here is a transposed version
 
         Quaternion q;
         float t;
-        if (m.get(2,2) < 0)
+        if (m.get(2, 2) < 0)
         {
             if (m.get(0, 0) > m.get(1, 1))
             {
                 t = 1 + m.get(0, 0) - m.get(1, 1) - m.get(2, 2);
-                q = {t, m.get(0, 1) + m.get(1, 0), m.get(2, 0) + m.get(0, 2), m.get(1, 2) - m.get(2, 1)};
+                q = {t, m.get(1, 0) + m.get(0, 1), m.get(0, 2) + m.get(2, 0), m.get(2, 1) - m.get(1, 2)};
             }
             else
             {
                 t = 1 - m.get(0, 0) + m.get(1, 1) - m.get(2, 2);
-                q = {m.get(0, 1) + m.get(1, 0), t, m.get(1, 2) + m.get(2, 1), m.get(2, 0) - m.get(0, 2)};
+                q = {m.get(1, 0) + m.get(0, 1), t, m.get(2, 1) + m.get(1, 2), m.get(0, 2) - m.get(2, 0)};
             }
         }
         else
@@ -195,12 +193,12 @@ namespace geom
             if (m.get(0, 0) < -m.get(1, 1))
             {
                 t = 1 - m.get(0, 0) - m.get(1, 1) + m.get(2, 2);
-                q = {m.get(2, 0) + m.get(0, 2), m.get(1, 2) + m.get(2, 1), t, m.get(0, 1) - m.get(1, 0)};
+                q = {m.get(0, 2) + m.get(2, 0), m.get(2, 1) + m.get(1, 2), t, m.get(1, 0) - m.get(0, 1)};
             }
             else
             {
                 t = 1 + m.get(0, 0) + m.get(1, 1) + m.get(2, 2);
-                q = {m.get(1, 2) - m.get(2, 1), m.get(2, 0) - m.get(0, 2), m.get(0, 1) - m.get(1, 0), t};
+                q = {m.get(2, 1) - m.get(1, 2), m.get(0, 2) - m.get(2, 0), m.get(1, 0) - m.get(0, 1), t};
             }
         }
         q = q * (0.5f / sqrtf(t));
