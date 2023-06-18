@@ -173,10 +173,6 @@ int main()
             geom::create_y_rotation_matrix_44(g_camera.rotation_euler.y) *
             geom::create_x_rotation_matrix_44(g_camera.rotation_euler.x);
 
-        auto test_mat = rotation_transform * rotation_transform.inverse();
-        auto t2 = geom::Matrix<2, 2>{ {0.5f, 0.f, 0.f, 0.5f} };
-        auto test_mat2 = t2 * t2.inverse();
-
         if (g_w_press) g_camera.translation += rotation_transform * geom::Vector3::unit_z() * g_timestep;
         if (g_s_press) g_camera.translation -= rotation_transform * geom::Vector3::unit_z() * g_timestep;
         if (g_a_press) g_camera.translation -= rotation_transform * geom::Vector3::unit_x() * g_timestep;
@@ -199,10 +195,13 @@ int main()
             mat_stack = waterfowl_dance->get_pose(s_time, true).get_matrix_stack();
         }
 
-        //draw
+        //identity matrix stack for testing
         std::vector<geom::Matrix44> mat_stack_i(20, geom::Matrix44::identity());
-        draw(vao, shader, mat_stack_i, mat_stack_i);
-        //draw(vao, shader, mat_stack, vertices.skeleton->inv_matrix_stack);
+
+        //draw
+        //draw(vao, shader, mat_stack_i, mat_stack_i);
+        //draw(vao, shader, mat_stack_i, cubeman.skeleton->inv_matrix_stack);
+        draw(vao, shader, mat_stack, cubeman.skeleton->inv_matrix_stack);
         glfwSwapBuffers(window);
 
         //check for errors
