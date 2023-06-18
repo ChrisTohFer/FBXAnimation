@@ -31,7 +31,7 @@ namespace anim
 
     struct Pose
     {
-        Skeleton* skeleton;
+        const Skeleton* skeleton;
         std::vector<Transform> local_transforms;
 
         static Pose interpolate(const Pose&, const Pose&, float t);
