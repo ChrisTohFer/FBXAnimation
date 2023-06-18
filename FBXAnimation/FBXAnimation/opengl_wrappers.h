@@ -122,6 +122,12 @@ public:
         glUniformMatrix4fv(location, 1, GL_FALSE, matrix.values);
     }
 
+    void set_uniform(const char* name, const std::vector<geom::Matrix44>& matrices) const
+    {
+        unsigned int location = glGetUniformLocation(m_program_id, name);
+        glUniformMatrix4fv(location, (int)matrices.size(), GL_FALSE, matrices[0].values);
+    }
+
     bool valid() const { return m_program_id != 0; }
     GLuint id() const { return m_program_id; }
 
@@ -278,11 +284,13 @@ inline Camera g_camera;
 //inline funcs
 
 template<Vertex VertexType>
-inline void draw(const VertexArray<VertexType>& vao, const Program& shader_program)
+inline void draw(const VertexArray<VertexType>& vao, const Program& shader_program, std::vector<geom::Matrix44>& mat_stack, std::vector<geom::Matrix44>& inv_mat_stack)
 {
     geom::Matrix44 projection_matrix = g_camera.calculate_camera_matrix();
     shader_program.use();
     shader_program.set_uniform("camera", projection_matrix);
+    shader_program.set_uniform("bones", mat_stack);
+    shader_program.set_uniform("inv_bones", inv_mat_stack);
     vao.use();
     glDrawElements(GL_TRIANGLES, vao.num_indices(), GL_UNSIGNED_INT, nullptr);
 }
