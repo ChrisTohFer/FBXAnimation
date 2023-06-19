@@ -209,22 +209,52 @@ namespace
 
             anim::Transform& transform = pose.local_transforms[transform_index];
             
-            //translation
-            transform.translation.x = curve_trans_x ? curve_trans_x->Evaluate(time) : (float)node->LclTranslation.Get()[0];
-            transform.translation.y = curve_trans_y ? curve_trans_y->Evaluate(time) : (float)node->LclTranslation.Get()[1];
-            transform.translation.z = curve_trans_z ? curve_trans_z->Evaluate(time) : (float)node->LclTranslation.Get()[2];
-            transform.translation = right_to_left_hand(transform.translation);
+            //check if this is the root
+            // -for the root we evaluate the global transform
+            // -for all other bones we evaluate the local transform
+            if (transform_index != 0)
+            {
+                //translation
+                transform.translation.x = curve_trans_x ? curve_trans_x->Evaluate(time) : (float)node->LclTranslation.Get()[0];
+                transform.translation.y = curve_trans_y ? curve_trans_y->Evaluate(time) : (float)node->LclTranslation.Get()[1];
+                transform.translation.z = curve_trans_z ? curve_trans_z->Evaluate(time) : (float)node->LclTranslation.Get()[2];
+                transform.translation = right_to_left_hand(transform.translation);
 
-            //rotation
-            float deg_to_rad = 3.14159f / 180.f;
-            float xrot = deg_to_rad * (curve_rot_x ? curve_rot_x->Evaluate(time) : (float)node->LclRotation.Get()[0]);
-            float yrot = deg_to_rad * (curve_rot_y ? curve_rot_y->Evaluate(time) : (float)node->LclRotation.Get()[1]);
-            float zrot = deg_to_rad * (curve_rot_z ? curve_rot_z->Evaluate(time) : (float)node->LclRotation.Get()[2]);
+                //rotation
+                float deg_to_rad = 3.14159f / 180.f;
+                float xrot = deg_to_rad * (curve_rot_x ? curve_rot_x->Evaluate(time) : (float)node->LclRotation.Get()[0]);
+                float yrot = deg_to_rad * (curve_rot_y ? curve_rot_y->Evaluate(time) : (float)node->LclRotation.Get()[1]);
+                float zrot = deg_to_rad * (curve_rot_z ? curve_rot_z->Evaluate(time) : (float)node->LclRotation.Get()[2]);
 
-            FbxEuler::EOrder rot_order;
-            node->GetRotationOrder(FbxNode::EPivotSet::eSourcePivot, rot_order);
+                FbxEuler::EOrder rot_order;
+                node->GetRotationOrder(FbxNode::EPivotSet::eSourcePivot, rot_order);
 
-            transform.rotation = right_to_left_hand(get_quaternion_from_fbx_euler(xrot, yrot, zrot, rot_order));
+                transform.rotation = right_to_left_hand(get_quaternion_from_fbx_euler(xrot, yrot, zrot, rot_order));
+            }
+            else
+            {
+                //apply global transformation to the root node
+                auto& global_transform = node->EvaluateGlobalTransform(time);
+                auto fbx_global_translation = global_transform.GetT();
+                auto fbx_global_rotation = global_transform.GetR();
+
+                geom::Vector3 global_translation;
+                global_translation.x = 0.01f * (float)fbx_global_translation[0];
+                global_translation.y = 0.01f * (float)fbx_global_translation[1];
+                global_translation.z = 0.01f * (float)fbx_global_translation[2];
+                global_translation = right_to_left_hand(global_translation);
+
+                geom::Quaternion global_rotation;
+                float deg_to_rad = 3.14159f / 180.f;
+                float xrot = deg_to_rad * (float)fbx_global_rotation[0];
+                float yrot = deg_to_rad * (float)fbx_global_rotation[1];
+                float zrot = deg_to_rad * (float)fbx_global_rotation[2];
+                global_rotation = right_to_left_hand(get_quaternion_from_fbx_euler(xrot, yrot, zrot, FbxEuler::EOrder::eOrderXYZ));
+
+                //global_transform
+                transform.translation = global_translation;
+                transform.rotation = global_rotation;
+            }
         }
 
         return pose;
