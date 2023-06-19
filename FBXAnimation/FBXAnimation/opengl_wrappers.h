@@ -262,8 +262,8 @@ private:
 
 struct Camera
 {
-    geom::Vector3 translation = -geom::Vector3::unit_z();
-    geom::Vector3 rotation_euler = geom::Vector3::zero();
+    geom::Vector3 translation = { 0,2,3 };
+    geom::Vector3 rotation_euler = 3.14159f * geom::Vector3::unit_y();
     float aspect_ratio = 1.f;
 
     geom::Matrix44 calculate_camera_matrix()

@@ -87,7 +87,7 @@ namespace anim
                 t);
 
             //Todo: need to interpolate the rotation, but this requires quaternion interpolation
-            pose_t.rotation = p1.local_transforms[i].rotation;
+            pose_t.rotation = geom::Quaternion::slerp(p1.local_transforms[i].rotation, p2.local_transforms[i].rotation, t);
         }
 
         return interpolated_pose;

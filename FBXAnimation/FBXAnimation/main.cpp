@@ -25,6 +25,7 @@ bool g_a_press = false;
 bool g_d_press = false;
 bool g_space_press = false;
 bool g_control_press = false;
+bool g_tab_press = false;
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     bool* key_flag = nullptr;
@@ -40,6 +41,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     case GLFW_KEY_D: key_flag = &g_d_press; break;
     case GLFW_KEY_SPACE: key_flag = &g_space_press; break;
     case GLFW_KEY_LEFT_CONTROL: key_flag = &g_control_press; break;
+    case GLFW_KEY_TAB: key_flag = &g_tab_press; break;
     default: return;
     }
 
@@ -55,8 +57,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void resize_callback(GLFWwindow* window, int width, int height)
 {
-    glViewport(0, 0, width, height);
-    g_camera.aspect_ratio = (float)width / height;
+    int framebuffer_x, framebuffer_y;
+    glfwGetFramebufferSize(window, &framebuffer_x, &framebuffer_y);
+    glViewport(0, 0, framebuffer_x, framebuffer_y);
+    g_camera.aspect_ratio = (float)framebuffer_x / framebuffer_y;
 }
 
 //^^ TEMP ^^
@@ -93,7 +97,6 @@ int main()
     printf("Loaded OpenGL\n");
 
     //setup draw info/assets
-    const anim::Animation* waterfowl_dance = nullptr;
 #if true
     FBXManagerWrapper fbx_manager;
     FbxFileContent cubeman = fbx_manager.load_file_content("../../assets/fbx/cubeman_v2.fbx");
@@ -102,13 +105,7 @@ int main()
         cubeman.indices.data(),
         (int)cubeman.indices.size());
 
-    for (auto& anim : cubeman.animations)
-    {
-        if (anim.name == "Armature|WaterfowlDance")
-        {
-            waterfowl_dance = &anim.animation;
-        }
-    }
+    int anim_index = 0;
 #else
     float vertices[9] = {
         -0.5f, -0.5f, 0.0f,
@@ -181,6 +178,9 @@ int main()
         if (g_control_press) g_camera.translation -= rotation_transform * geom::Vector3::unit_y() * g_timestep;
 
 
+        if (g_tab_press) anim_index = (anim_index + 1) % cubeman.animations.size();
+        g_tab_press = false;
+
         //openGL housekeeping
         //glEnable(GL_DEPTH_TEST);
         glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
@@ -190,17 +190,16 @@ int main()
         static float s_time = 0.f;
         s_time += g_timestep;
         std::vector<geom::Matrix44> mat_stack;
-        if (waterfowl_dance)
+
+        if (cubeman.animations.size() > anim_index)
         {
-            mat_stack = waterfowl_dance->get_pose(s_time, true).get_matrix_stack();
+            mat_stack = cubeman.animations[anim_index].animation.get_pose(s_time, true).get_matrix_stack();
         }
 
         //identity matrix stack for testing
         std::vector<geom::Matrix44> mat_stack_i(20, geom::Matrix44::identity());
 
         //draw
-        //draw(vao, shader, mat_stack_i, mat_stack_i);
-        //draw(vao, shader, mat_stack_i, cubeman.skeleton->inv_matrix_stack);
         draw(vao, shader, mat_stack, cubeman.skeleton->inv_matrix_stack);
         glfwSwapBuffers(window);
 
