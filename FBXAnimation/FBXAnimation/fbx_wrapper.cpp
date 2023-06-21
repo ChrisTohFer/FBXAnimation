@@ -273,6 +273,8 @@ namespace
             content.animations.push_back({ anim_stack->GetName(), anim::Animation(*content.skeleton) });
             anim::Animation& animation = content.animations.back().animation;
 
+            scene.SetCurrentAnimationStack(anim_stack);
+
             //loop over frames and create a keyframe for each one
             constexpr float frame_dt = 1.f / 30.f;
             for (int frame = 0;; ++frame)
