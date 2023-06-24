@@ -11,10 +11,11 @@ namespace graphics
         geom::Vector3 rotation_euler = geom::PI * geom::Vector3::unit_y();
         float aspect_ratio = 1.f;
         float fov = geom::PI * 0.5f;
-        float near = 0.1f;
+        float near = 0.01f;
         float far = 100.f;
 
-        geom::Matrix44 calculate_camera_matrix();
+        geom::Vector3 facing() const;
+        geom::Matrix44 calculate_camera_matrix() const;
     };
 
 }

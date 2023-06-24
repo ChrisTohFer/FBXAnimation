@@ -163,6 +163,7 @@
     <ClInclude Include="anim_pose.h" />
     <ClInclude Include="fbx_wrapper.h" />
     <ClInclude Include="graphics\camera.h" />
+    <ClInclude Include="graphics\colour.h" />
     <ClInclude Include="graphics\core_shaders.h" />
     <ClInclude Include="graphics\shader.h" />
     <ClInclude Include="graphics\vertex_array.h" />

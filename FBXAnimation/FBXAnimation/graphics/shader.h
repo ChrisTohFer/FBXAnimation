@@ -1,5 +1,7 @@
 #pragma once
 
+#include "colour.h"
+
 #include "maths/geometry.h"
 
 #include "glad/glad.h"
@@ -41,6 +43,7 @@ namespace graphics
         void delete_program();
         void use() const;
 
+        void set_uniform(const char* name, const Colour& colour) const;
         void set_uniform(const char* name, const geom::Matrix44& matrix) const;
         void set_uniform(const char* name, const std::vector<geom::Matrix44>& matrices) const;
 

@@ -16,7 +16,7 @@ namespace graphics
     {
     public:
         ~VertexBuffer();
-        VertexBuffer(const std::vector<VertexType>& vertices);
+        VertexBuffer(const std::vector<VertexType>& vertices, unsigned int usage_type = GL_STATIC_DRAW);
         VertexBuffer(VertexBuffer&& other);
         VertexBuffer& operator=(VertexBuffer&& other);
 
@@ -38,11 +38,11 @@ namespace graphics
     }
 
     template<Vertex VertexType>
-    VertexBuffer<VertexType>::VertexBuffer(const std::vector<VertexType>& vertices)
+    VertexBuffer<VertexType>::VertexBuffer(const std::vector<VertexType>& vertices, unsigned int usage_type)
     {
         glGenBuffers(1, &m_vbo);
         glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(VertexType) * vertices.size(), vertices.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(VertexType) * vertices.size(), vertices.data(), usage_type);
     }
 
     template<Vertex VertexType>

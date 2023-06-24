@@ -80,5 +80,8 @@
     <ClInclude Include="graphics\core_shaders.h">
       <Filter>Code Files\graphics</Filter>
     </ClInclude>
+    <ClInclude Include="graphics\colour.h">
+      <Filter>Code Files\graphics</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

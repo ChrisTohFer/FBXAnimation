@@ -54,6 +54,12 @@ namespace graphics
         glUseProgram(m_program_id);
     }
 
+    void Program::set_uniform(const char* name, const Colour& colour) const
+    {
+        unsigned int location = glGetUniformLocation(m_program_id, name);
+        glUniform4f(location, colour.r, colour.g, colour.b, colour.a);
+    }
+
     void Program::set_uniform(const char* name, const geom::Matrix44& matrix) const
     {
         unsigned int location = glGetUniformLocation(m_program_id, name);

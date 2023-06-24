@@ -102,7 +102,6 @@ int main()
     printf("Loaded OpenGL\n");
 
     //setup draw info/assets
-#if true
     FBXManagerWrapper fbx_manager;
     FbxFileContent cubeman = fbx_manager.load_file_content("../../assets/fbx/cubeman_v2.fbx");
     graphics::VertexArray<SkinnedVertex> vao(
@@ -111,24 +110,10 @@ int main()
         (int)cubeman.indices.size());
 
     int anim_index = 0;
-#else
-    float vertices[9] = {
-        -0.5f, -0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f,
-         0.0f,  0.5f, 0.0f
-    };
-    unsigned int indices[3] = {
-        0, 1, 2
-    };
-    VertexArray vao(
-        vertices,
-        9,
-        indices,
-        3);
-#endif
 
     graphics::UnskinnedMeshShader<SkinnedVertex> unskinned_shader;
     graphics::SkinnedMeshShader<SkinnedVertex> skinned_shader;
+    graphics::DebugShader debug_shader;
 
     while (true)
     {
@@ -183,8 +168,11 @@ int main()
 
         //draw
         //unskinned_shader.draw(vao, g_camera.calculate_camera_matrix(), geom::create_translation_matrix_44({ 0.f,0.f,0.f }));
-        skinned_shader.draw(vao, g_camera.calculate_camera_matrix(), geom::create_translation_matrix_44({ 0.f,0.f,0.f }), mat_stack, cubeman.skeleton->inv_matrix_stack);
-        
+        //skinned_shader.draw(vao, g_camera.calculate_camera_matrix(), geom::create_translation_matrix_44({ 0.f,0.f,0.f }), mat_stack, cubeman.skeleton->inv_matrix_stack);
+        debug_shader.draw_line(g_camera, { -1.f, 0.f, 0.f }, { 1.f, 0.f, 0.f });
+        debug_shader.draw_point(g_camera, { 0.f, 1.f, 0.f });
+        debug_shader.draw_point(g_camera, { 0.f, -1.f, 0.f });
+
         glfwSwapBuffers(window);
 
         //check for errors
