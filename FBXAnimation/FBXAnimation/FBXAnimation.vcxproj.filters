@@ -5,50 +5,80 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Header Files">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
-    </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Header Files\maths">
+    <Filter Include="Code Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Code Files\maths">
       <UniqueIdentifier>{f27e2cc7-63b4-4b5c-bb67-03e8b038ecd0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Code Files\graphics">
+      <UniqueIdentifier>{84ecb8fd-8c9f-42a5-b3dd-88fd954ef369}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="graphics\vertex_array.cpp">
+      <Filter>Code Files\graphics</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\external\glad\src\glad.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="graphics\vertex_buffer.cpp">
+      <Filter>Code Files\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="graphics\shader.cpp">
+      <Filter>Code Files\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="graphics\camera.cpp">
+      <Filter>Code Files\graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Code Files</Filter>
     </ClCompile>
     <ClCompile Include="fbx_wrapper.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Code Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\glad\src\glad.c">
+      <Filter>Code Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="fbx_wrapper.h">
-      <Filter>Header Files</Filter>
+      <Filter>Code Files</Filter>
     </ClInclude>
     <ClInclude Include="anim_pose.h">
-      <Filter>Header Files</Filter>
+      <Filter>Code Files</Filter>
     </ClInclude>
     <ClInclude Include="maths\quaternion.h">
-      <Filter>Header Files\maths</Filter>
+      <Filter>Code Files\maths</Filter>
     </ClInclude>
     <ClInclude Include="maths\vector3.h">
-      <Filter>Header Files\maths</Filter>
+      <Filter>Code Files\maths</Filter>
     </ClInclude>
     <ClInclude Include="maths\matrix.h">
-      <Filter>Header Files\maths</Filter>
+      <Filter>Code Files\maths</Filter>
     </ClInclude>
     <ClInclude Include="maths\geometry.h">
-      <Filter>Header Files\maths</Filter>
+      <Filter>Code Files\maths</Filter>
     </ClInclude>
-    <ClInclude Include="opengl_wrappers.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="graphics\vertex_array.h">
+      <Filter>Code Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics\vertex_buffer.h">
+      <Filter>Code Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics\shader.h">
+      <Filter>Code Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics\camera.h">
+      <Filter>Code Files\graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="maths\constants.h">
+      <Filter>Code Files\maths</Filter>
+    </ClInclude>
+    <ClInclude Include="graphics\core_shaders.h">
+      <Filter>Code Files\graphics</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

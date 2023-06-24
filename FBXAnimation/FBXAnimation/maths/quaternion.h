@@ -1,5 +1,6 @@
 #pragma once
 
+#include "constants.h"
 #include <math.h>
 
 namespace geom
@@ -107,8 +108,9 @@ namespace geom
 
     inline Quaternion Quaternion::slerp(const Quaternion& qa, const Quaternion& qb, float t)
     {
+        //todo - is this the most effective way to allow >360 degree interpolation?
         Quaternion a_to_b = qa.inverse() * qb;
-        float fraction_of_pi = a_to_b.angle() / 3.14159f;
+        float fraction_of_pi = a_to_b.angle() / PI;
         if (fraction_of_pi > 1.f)
         {
             return qa * a_to_b.raised_to_power(-t * (2.f - fraction_of_pi) / fraction_of_pi);

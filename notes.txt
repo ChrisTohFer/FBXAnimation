@@ -9,9 +9,6 @@ opengl screenspace coords:
 
 next:
 	Improve draw calls
-	-add world position
-	-refactor
-	-allow skinned and unskinned drawing
 	-some utility functions (draw line/circle)
 	
 	Add ImGui

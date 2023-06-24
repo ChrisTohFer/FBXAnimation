@@ -1,7 +1,10 @@
 #include "fbx_wrapper.h"
-#include "opengl_wrappers.h"
 
 #include "maths/vector3.h"
+
+#include "graphics/camera.h"
+#include "graphics/core_shaders.h"
+
 #include "anim_pose.h"
 
 #include "glad/glad.h"
@@ -13,6 +16,8 @@
 
 
 //vv TEMP vv
+
+graphics::Camera g_camera;
 
 float g_timestep = 0.f;
 bool g_up_press = false;
@@ -100,8 +105,8 @@ int main()
 #if true
     FBXManagerWrapper fbx_manager;
     FbxFileContent cubeman = fbx_manager.load_file_content("../../assets/fbx/cubeman_v2.fbx");
-    VertexArray<SkinnedVertex> vao(
-        VertexBuffer(cubeman.vertices),
+    graphics::VertexArray<SkinnedVertex> vao(
+        graphics::VertexBuffer(cubeman.vertices),
         cubeman.indices.data(),
         (int)cubeman.indices.size());
 
@@ -122,31 +127,8 @@ int main()
         3);
 #endif
 
-    const char* vertex_shader_source =
-        "#version 330 core\n"
-        "layout(location = 0) in vec3 aPos;"
-        "layout(location = 1) in int bone;"
-
-        "uniform mat4 camera;"
-        "uniform mat4 bones[50];"
-        "uniform mat4 inv_bones[50];"
-
-        "void main()"
-        "{"
-        "mat4 bone_matrix = bones[bone];"
-        "mat4 inv_bone_matrix = inv_bones[bone];"
-        "gl_Position = camera * bone_matrix * inv_bone_matrix * vec4(aPos.x, aPos.y, aPos.z, 1.0);"
-        "};";
-
-    const char* fragment_shader_source =
-        "#version 330 core\n"
-        "out vec4 FragColor;"
-
-        "void main()"
-        "{"
-        "FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);"
-        "}";
-    Program shader(vertex_shader_source, fragment_shader_source);
+    graphics::UnskinnedMeshShader<SkinnedVertex> unskinned_shader;
+    graphics::SkinnedMeshShader<SkinnedVertex> skinned_shader;
 
     while (true)
     {
@@ -200,7 +182,9 @@ int main()
         std::vector<geom::Matrix44> mat_stack_i(20, geom::Matrix44::identity());
 
         //draw
-        draw(vao, shader, mat_stack, cubeman.skeleton->inv_matrix_stack);
+        //unskinned_shader.draw(vao, g_camera.calculate_camera_matrix(), geom::create_translation_matrix_44({ 0.f,0.f,0.f }));
+        skinned_shader.draw(vao, g_camera.calculate_camera_matrix(), geom::create_translation_matrix_44({ 0.f,0.f,0.f }), mat_stack, cubeman.skeleton->inv_matrix_stack);
+        
         glfwSwapBuffers(window);
 
         //check for errors

@@ -158,7 +158,7 @@ namespace
             bone.global_transform.translation.z = 0.01f * (float)global_translation[2];
             bone.global_transform.translation = right_to_left_hand(bone.global_transform.translation);
 
-            float deg_to_rad = 3.14159f / 180.f;
+            float deg_to_rad = geom::PI / 180.f;
             float xrot = deg_to_rad * (float)global_rotation[0];
             float yrot = deg_to_rad * (float)global_rotation[1];
             float zrot = deg_to_rad * (float)global_rotation[2];
@@ -221,7 +221,7 @@ namespace
                 transform.translation = right_to_left_hand(transform.translation);
 
                 //rotation
-                float deg_to_rad = 3.14159f / 180.f;
+                float deg_to_rad = geom::PI / 180.f;
                 float xrot = deg_to_rad * (curve_rot_x ? curve_rot_x->Evaluate(time) : (float)node->LclRotation.Get()[0]);
                 float yrot = deg_to_rad * (curve_rot_y ? curve_rot_y->Evaluate(time) : (float)node->LclRotation.Get()[1]);
                 float zrot = deg_to_rad * (curve_rot_z ? curve_rot_z->Evaluate(time) : (float)node->LclRotation.Get()[2]);
@@ -245,7 +245,7 @@ namespace
                 global_translation = right_to_left_hand(global_translation);
 
                 geom::Quaternion global_rotation;
-                float deg_to_rad = 3.14159f / 180.f;
+                float deg_to_rad = geom::PI / 180.f;
                 float xrot = deg_to_rad * (float)fbx_global_rotation[0];
                 float yrot = deg_to_rad * (float)fbx_global_rotation[1];
                 float zrot = deg_to_rad * (float)fbx_global_rotation[2];
