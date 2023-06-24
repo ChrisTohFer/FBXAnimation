@@ -26,6 +26,8 @@ namespace geom
         Matrix adjugate() const;
         Matrix inverse() const;
         Matrix transpose() const;
+
+        Vector3 translation() const;
     };
 
     //operators
@@ -203,5 +205,12 @@ namespace geom
             }
         }
         return result;
+    }
+
+    //todo: should be limited to matrices with at least 4 columns and 3 rows
+    template<int Rows, int Columns>
+    Vector3 Matrix<Rows, Columns>::translation() const
+    {
+        return { get(0, 3), get(1, 3), get(2,3) };
     }
 }

@@ -46,9 +46,12 @@ namespace graphics
 
         m_vbo.bind();
 
-        glGenBuffers(1, &m_ibo);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ibo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices_count, indices, GL_STATIC_DRAW);
+        if (indices != nullptr)
+        {
+            glGenBuffers(1, &m_ibo);
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ibo);
+            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices_count, indices, GL_STATIC_DRAW);
+        }
     }
 
     template<Vertex VertexType>

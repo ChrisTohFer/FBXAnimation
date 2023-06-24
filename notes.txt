@@ -8,9 +8,6 @@ opengl screenspace coords:
 	y: bottom is -1.0, top is 1.0
 
 next:
-	Improve draw calls
-	-some utility functions (draw line/circle)
-	
 	Add ImGui
 	-Allow selection of mesh and animation through imgui
 	-All meshes in assets folder can be loaded in instead of a hardcoded one

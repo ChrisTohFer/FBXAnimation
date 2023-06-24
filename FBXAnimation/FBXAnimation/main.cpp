@@ -115,6 +115,20 @@ int main()
     graphics::SkinnedMeshShader<SkinnedVertex> skinned_shader;
     graphics::DebugShader debug_shader;
 
+    auto draw_skeleton = [&](const anim::Skeleton& skeleton, const std::vector<geom::Matrix44>& matrices)
+    {
+        _ASSERT(skeleton.bones.size() == matrices.size());
+        for (int i = 0; i < matrices.size(); ++i)
+        {
+            const auto& bone = skeleton.bones[i];
+            if (bone.parent_index == -1)
+            {
+                continue;
+            }
+            debug_shader.draw_line(g_camera, matrices[i].translation(), matrices[bone.parent_index].translation());
+        }
+    };
+
     while (true)
     {
         //timing start
@@ -167,11 +181,11 @@ int main()
         std::vector<geom::Matrix44> mat_stack_i(20, geom::Matrix44::identity());
 
         //draw
+        //debug_shader.draw_line(g_camera, geom::Vector3::zero(), geom::Vector3::one());
         //unskinned_shader.draw(vao, g_camera.calculate_camera_matrix(), geom::create_translation_matrix_44({ 0.f,0.f,0.f }));
-        //skinned_shader.draw(vao, g_camera.calculate_camera_matrix(), geom::create_translation_matrix_44({ 0.f,0.f,0.f }), mat_stack, cubeman.skeleton->inv_matrix_stack);
-        debug_shader.draw_line(g_camera, { -1.f, 0.f, 0.f }, { 1.f, 0.f, 0.f });
-        debug_shader.draw_point(g_camera, { 0.f, 1.f, 0.f });
-        debug_shader.draw_point(g_camera, { 0.f, -1.f, 0.f });
+        skinned_shader.draw(vao, g_camera.calculate_camera_matrix(), geom::create_translation_matrix_44({ 0.f,0.f,0.f }), mat_stack, cubeman.skeleton->inv_matrix_stack);
+        draw_skeleton(*cubeman.skeleton, mat_stack);
+
 
         glfwSwapBuffers(window);
 

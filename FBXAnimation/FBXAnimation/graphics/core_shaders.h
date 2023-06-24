@@ -222,7 +222,7 @@ namespace graphics
         vertices.push_back({ p1 + offset1 });
         vertices.push_back({ p2 - offset2 });
         vertices.push_back({ p2 + offset2 });
-        
+
         draw(camera.calculate_camera_matrix(), vertices, colour);
     }
 
@@ -232,10 +232,10 @@ namespace graphics
         set_uniform("camera", camera);
         set_uniform("colour", colour);
 
-        VertexBuffer vertex_buffer(vertices, GL_STREAM_DRAW);
-        vertex_buffer.bind();
+        VertexArray vao(VertexBuffer(vertices, GL_STREAM_DRAW), nullptr, 0);
+        vao.use();
 
-        glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+        glDrawArrays(GL_TRIANGLES, 0, (int)vertices.size());
     }
 
 }
