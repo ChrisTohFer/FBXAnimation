@@ -27,6 +27,8 @@ namespace anim
 
         std::vector<Bone> bones;
         std::vector<geom::Matrix44> inv_matrix_stack;
+        
+        std::vector<geom::Matrix44> matrix_stack();
     };
 
     struct Pose
@@ -65,6 +67,18 @@ namespace anim
     inline geom::Matrix44 Transform::calculate_matrix() const
     {
         return geom::create_translation_matrix_44(translation) * geom::create_rotation_matrix_from_quaternion(rotation);
+    }
+
+    //skeleton
+
+    inline std::vector<geom::Matrix44> Skeleton::matrix_stack()
+    {
+        std::vector<geom::Matrix44> matrices;
+        for (auto& bone : bones)
+        {
+            matrices.push_back(bone.global_transform.calculate_matrix());
+        }
+        return matrices;
     }
 
     //pose

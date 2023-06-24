@@ -133,7 +133,7 @@ namespace
         return skinned_index;
     }
 
-    void process_armature_nodes(FbxSkin& skin, anim::Skeleton& skeleton, std::vector<FbxNode*>& nodes_out)
+    void process_skeleton_nodes(FbxSkin& skin, anim::Skeleton& skeleton, std::vector<FbxNode*>& nodes_out)
     {
         int cluster_count = skin.GetClusterCount();
         skeleton.bones.resize(cluster_count);
@@ -190,16 +190,16 @@ namespace
     anim::Pose process_keyframe(
         FbxTime& time,
         const anim::Skeleton& skeleton,
-        std::vector<FbxNode*> armature_nodes,
+        std::vector<FbxNode*> skeleton_nodes,
         FbxAnimLayer* anim_layer)
     {
         anim::Pose pose;
         pose.skeleton = &skeleton;
 
-        pose.local_transforms.resize(armature_nodes.size());
-        for (int transform_index = 0; transform_index < armature_nodes.size(); ++transform_index)
+        pose.local_transforms.resize(skeleton_nodes.size());
+        for (int transform_index = 0; transform_index < skeleton_nodes.size(); ++transform_index)
         {
-            FbxNode* node = armature_nodes[transform_index];
+            FbxNode* node = skeleton_nodes[transform_index];
             FbxAnimCurve* curve_trans_x = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_X);
             FbxAnimCurve* curve_trans_y = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Y);
             FbxAnimCurve* curve_trans_z = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Z);
@@ -260,12 +260,14 @@ namespace
         return pose;
     }
 
-    void process_animations(FbxScene& scene, std::vector<FbxNode*>& armature_nodes, FbxFileContent& content)
+    void process_animations(FbxScene& scene, std::vector<FbxNode*>& skeleton_nodes, FbxFileContent& content)
     {
         //loop over anim stacks
         for (int i = 0; i < scene.GetSrcObjectCount<FbxAnimStack>(); ++i)
         {
             FbxAnimStack* anim_stack = scene.GetSrcObject<FbxAnimStack>(i);
+            std::cout << "Loading anim stack: " << anim_stack->GetName() << "\n";
+
             float duration = 0.001f * (float)anim_stack->GetLocalTimeSpan().GetDuration().GetMilliSeconds();
             _ASSERT(anim_stack->GetSrcObjectCount<FbxAnimLayer>() == 1);
             FbxAnimLayer* anim_layer = anim_stack->GetSrcObject<FbxAnimLayer>(0);
@@ -293,7 +295,7 @@ namespace
                 FbxTime ftime;
                 ftime.SetMilliSeconds((FbxLongLong)(time * 1000.f));
                 animation.add_keyframe(
-                    process_keyframe(ftime, *content.skeleton, armature_nodes, anim_layer),
+                    process_keyframe(ftime, *content.skeleton, skeleton_nodes, anim_layer),
                     time);
 
                 if (final_frame)
@@ -313,6 +315,9 @@ namespace
             //error
             return;
         }
+
+
+        scene.GetGlobalSettings().SetAxisSystem(FbxAxisSystem(FbxAxisSystem::EPreDefinedAxisSystem::eOpenGL));
 
         //get mesh
         int root_child_count = root_node->GetChildCount();
@@ -375,24 +380,12 @@ namespace
             content.indices.push_back(mesh->GetPolygonVertex(i, 2));
         }
 
-        //get skeleton
-        FbxNode* armature = nullptr;
-        for (int i = 0; i < root_node->GetChildCount(); ++i)
-        {
-            auto* child = root_node->GetChild(i);
-            if (strcmp("Armature", child->GetName()) == 0)
-            {
-                armature = child;
-            }
-        }
-        _ASSERT(armature);
-
         content.skeleton = std::make_unique<anim::Skeleton>();
-        std::vector<FbxNode*> armature_nodes;
-        process_armature_nodes(*skin, *content.skeleton, armature_nodes);
+        std::vector<FbxNode*> skeleton_nodes;
+        process_skeleton_nodes(*skin, *content.skeleton, skeleton_nodes);
 
         //get animations
-        process_animations(scene, armature_nodes, content);
+        process_animations(scene, skeleton_nodes, content);
     }
 
 }

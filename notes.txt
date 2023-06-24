@@ -1,0 +1,20 @@
+left handed coordinate system
+	z goes into screen
+	x is to the right
+	y is up
+
+opengl screenspace coords:
+	x: left is -1.0, right is 1.0
+	y: bottom is -1.0, top is 1.0
+
+next:
+	Improve draw calls
+	-add world position
+	-refactor
+	-allow skinned and unskinned drawing
+	-some utility functions (draw line/circle)
+	
+	Add ImGui
+	-Allow selection of mesh and animation through imgui
+	-All meshes in assets folder can be loaded in instead of a hardcoded one
+	
