@@ -16,6 +16,7 @@
 #include <chrono>
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 
 //vv TEMP vv
@@ -137,8 +138,8 @@ int main()
             }
             debug_shader.draw_line(
                 g_camera, 
-                matrices[i].translation() + world.translation(),
-                matrices[bone.parent_index].translation() + world.translation());
+                world * matrices[i].translation(),
+                world * matrices[bone.parent_index].translation());
         }
     };
     auto draw_skeleton_rotations = [&](
@@ -199,34 +200,115 @@ int main()
         if (g_space_press) g_camera.translation += rotation_transform * geom::Vector3::unit_y() * g_timestep;
         if (g_control_press) g_camera.translation -= rotation_transform * geom::Vector3::unit_y() * g_timestep;
 
-
-        if (g_tab_press) anim_index = (anim_index + 1) % cubeman.animations.size();
-        g_tab_press = false;
-
-
         //evaluate animation
         static float s_time = 0.f;
         s_time += g_timestep;
-        std::vector<geom::Matrix44> mat_stack;
 
-        if (cubeman.animations.size() > anim_index)
+        struct Instance
         {
-            mat_stack = cubeman.animations[anim_index].animation.get_pose(s_time, true).get_matrix_stack();
+            enum Type
+            {
+                SkinnedMesh,
+                UnskinnedMesh,
+                SkinnedPose,
+                RefPose,
+            };
+            Type type = RefPose;
+            int anim_index = 0;
+            geom::Vector3 translation = geom::Vector3::zero();
+            geom::Vector3 euler = geom::Vector3::zero();
+            geom::Vector3 scale = geom::Vector3::one();
+
+            geom::Vector3 anim_mod_translation = geom::Vector3::zero();
+            geom::Vector3 anim_mod_euler = geom::Vector3::zero();
+
+            int id = next_id();
+            static int next_id() { static int id = 0; return id++; }
+        };
+        static std::vector<Instance> s_instances;
+
+        ImGui::Begin("Instances");
+        if (ImGui::Button("Add"))
+        {
+            s_instances.push_back({});
         }
+        int to_delete = -1;
+        for (int i = 0; i < s_instances.size(); ++i)
+        {
+            auto& instance = s_instances[i];
+            //draw the instance
+            auto world =
+                geom::create_translation_matrix_44(instance.translation) *
+                geom::create_z_rotation_matrix_44(instance.euler.z * geom::PI / 180.f) *
+                geom::create_y_rotation_matrix_44(instance.euler.y * geom::PI / 180.f) *
+                geom::create_x_rotation_matrix_44(instance.euler.x * geom::PI / 180.f) *
+                geom::create_scale_matrix_44(instance.scale);
 
-        //identity matrix stack for testing
-        std::vector<geom::Matrix44> mat_stack_i(100, geom::Matrix44::identity());
+            auto create_matrix_stack = [&]()
+            {
+                std::vector<geom::Matrix44> mat_stack;
+                if (cubeman.animations.size() > instance.anim_index)
+                {
+                    mat_stack = cubeman.animations[instance.anim_index].animation.get_pose(s_time, true).get_matrix_stack();
+                }
+                else
+                {
+                    mat_stack.resize(cubeman.skeleton->bones.size(), geom::Matrix44::identity());
+                }
 
-        //draw
-        //debug_shader.draw_line(g_camera, geom::Vector3::zero(), geom::Vector3::one());
-        //unskinned_shader.draw(vao, g_camera.calculate_camera_matrix(), geom::create_translation_matrix_44({ 0.f,0.f,0.f }));
-        skinned_shader.draw(vao, g_camera.calculate_camera_matrix(), geom::create_translation_matrix_44({ 0.f,0.f,0.f }), mat_stack, cubeman.skeleton->inv_matrix_stack);
-        draw_skeleton(*cubeman.skeleton, mat_stack, geom::create_translation_matrix_44({ 0.f,0.f,0.f }));
-        //skinned_shader.draw(vao, g_camera.calculate_camera_matrix(), geom::create_translation_matrix_44({ 0.f,0.f,0.f }), cubeman.skeleton->matrix_stack(), cubeman.skeleton->inv_matrix_stack);
-        draw_skeleton(*cubeman.skeleton, cubeman.skeleton->matrix_stack(), geom::create_translation_matrix_44({ 0.f,0.f, 1.f }));
-        draw_skeleton_rotations(*cubeman.skeleton, cubeman.skeleton->matrix_stack(), geom::create_translation_matrix_44({ 0.f,0.f, 3.f }));
+                return mat_stack;
+            };
 
-        ImGui::ShowDemoWindow();
+            switch (instance.type)
+            {
+            case Instance::SkinnedMesh:
+            {
+                skinned_shader.draw(vao, g_camera.calculate_camera_matrix(), world, create_matrix_stack(), cubeman.skeleton->inv_matrix_stack);
+                break;
+            }
+            case Instance::UnskinnedMesh:
+                unskinned_shader.draw(vao, g_camera.calculate_camera_matrix(), world);
+                break;
+            case Instance::SkinnedPose:
+                draw_skeleton(*cubeman.skeleton, create_matrix_stack(), world);
+                break;
+            case Instance::RefPose:
+                draw_skeleton(*cubeman.skeleton, cubeman.skeleton->matrix_stack(), world);
+                break;
+            }
+
+            //add edit details to imgui window
+            char label[64];
+            sprintf_s(label, "%d", instance.id);
+            if(ImGui::CollapsingHeader(label))
+            {
+                ImGui::PushID(i);
+                if (ImGui::Button("delete"))
+                {
+                    to_delete = i;
+                }
+                int type_int = (int)instance.type;
+                ImGui::InputInt("Type", &type_int);
+                instance.type = (Instance::Type)type_int;
+                ImGui::InputInt("Anim", &instance.anim_index);
+                ImGui::DragFloat3("Position", &instance.translation.x, 0.2f);
+                ImGui::DragFloat3("Rotation", &instance.euler.x, 5.f);
+                ImGui::DragFloat3("Scale", &instance.scale.x, 0.01f);
+
+                ImGui::Separator();
+
+                ImGui::DragFloat3("Anim_Position", &instance.anim_mod_translation.x, 0.2f);
+                ImGui::DragFloat3("Anim_Rotation", &instance.anim_mod_euler.x, 5.f);
+
+
+                ImGui::PopID();
+            }
+        }
+        ImGui::End();
+        if (to_delete != -1)
+        {
+            s_instances.erase(s_instances.begin() + to_delete);
+        }
 
         //ImGui end frame
         ImGui::Render();

@@ -156,10 +156,10 @@ namespace
             auto global_translation = global_transform.GetT();
             auto global_rotation = global_transform.GetR();
 
-            bone.global_transform.translation.x = 0.01f * (float)global_translation[0];
-            bone.global_transform.translation.y = 0.01f * (float)global_translation[1];
-            bone.global_transform.translation.z = 0.01f * (float)global_translation[2];
-            bone.global_transform.translation = right_to_left_hand(bone.global_transform.translation);
+            bone.global_transform.translation.x = (float)global_translation[0];
+            bone.global_transform.translation.y = (float)global_translation[1];
+            bone.global_transform.translation.z = (float)global_translation[2];
+            bone.global_transform.translation = right_to_left_hand(bone.global_transform.translation) * 0.01f;
 
             float deg_to_rad = geom::PI / 180.f;
             float xrot = deg_to_rad * (float)global_rotation[0];
@@ -267,7 +267,7 @@ namespace
 
                 transform.rotation = get_quaternion_from_fbx_euler(xrot, yrot, zrot, FbxEuler::EOrder::eOrderXYZ);
             }
-            transform.translation = right_to_left_hand(transform.translation) / 20.f;
+            transform.translation = right_to_left_hand(transform.translation) * 0.01f;
             transform.rotation = right_to_left_hand(transform.rotation);
         }
 
