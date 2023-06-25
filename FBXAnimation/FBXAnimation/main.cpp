@@ -9,6 +9,9 @@
 
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+#include "imgui/imgui.h"
 
 #include <chrono>
 #include <iostream>
@@ -88,7 +91,6 @@ int main()
         return -1;
     }
     glfwMakeContextCurrent(window);
-
     
     glfwSetKeyCallback(window, key_callback);
     glfwSetWindowSizeCallback(window, resize_callback);
@@ -100,6 +102,11 @@ int main()
         return -1;
     }
     printf("Loaded OpenGL\n");
+
+    //set up imgui
+    ImGui::CreateContext();
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init("#version 330 core");
 
     //setup draw info/assets
     FBXManagerWrapper fbx_manager;
@@ -164,6 +171,16 @@ int main()
         if (glfwWindowShouldClose(window))
             break;
 
+        //openGL housekeeping
+        //glEnable(GL_DEPTH_TEST);
+        glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        //ImGui Start frame
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
         //camera movement
         if (g_left_press) g_camera.rotation_euler.y -= 1.f * g_timestep;
         if (g_right_press) g_camera.rotation_euler.y += 1.f * g_timestep;
@@ -186,10 +203,6 @@ int main()
         if (g_tab_press) anim_index = (anim_index + 1) % cubeman.animations.size();
         g_tab_press = false;
 
-        //openGL housekeeping
-        //glEnable(GL_DEPTH_TEST);
-        glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
 
         //evaluate animation
         static float s_time = 0.f;
@@ -213,7 +226,13 @@ int main()
         draw_skeleton(*cubeman.skeleton, cubeman.skeleton->matrix_stack(), geom::create_translation_matrix_44({ 0.f,0.f, 1.f }));
         draw_skeleton_rotations(*cubeman.skeleton, cubeman.skeleton->matrix_stack(), geom::create_translation_matrix_44({ 0.f,0.f, 3.f }));
 
+        ImGui::ShowDemoWindow();
 
+        //ImGui end frame
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        //flip buffer
         glfwSwapBuffers(window);
 
         //check for errors
@@ -228,6 +247,11 @@ int main()
         auto duration = std::chrono::system_clock::now() - update_start_time;
         g_timestep = (float) std::chrono::duration_cast<std::chrono::microseconds>(duration).count() * 0.000001f;
     }
+
+    //ImGui End
+    ImGui_ImplGlfw_Shutdown();
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui::DestroyContext();
 
     //close
     glfwTerminate();
