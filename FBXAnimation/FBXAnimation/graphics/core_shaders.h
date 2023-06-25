@@ -114,8 +114,8 @@ namespace graphics
 
         "uniform mat4 camera;"
         "uniform mat4 world;"
-        "uniform mat4 bones[50];"
-        "uniform mat4 inv_bones[50];"
+        "uniform mat4 bones[100];"
+        "uniform mat4 inv_bones[100];"
 
         "void main()"
         "{"

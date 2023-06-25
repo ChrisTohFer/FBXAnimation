@@ -103,7 +103,7 @@ int main()
 
     //setup draw info/assets
     FBXManagerWrapper fbx_manager;
-    FbxFileContent cubeman = fbx_manager.load_file_content("../../assets/fbx/cubeman_v2.fbx");
+    FbxFileContent cubeman = fbx_manager.load_file_content("../../assets/fbx/Capoeira.fbx");
     graphics::VertexArray<SkinnedVertex> vao(
         graphics::VertexBuffer(cubeman.vertices),
         cubeman.indices.data(),
@@ -115,7 +115,10 @@ int main()
     graphics::SkinnedMeshShader<SkinnedVertex> skinned_shader;
     graphics::DebugShader debug_shader;
 
-    auto draw_skeleton = [&](const anim::Skeleton& skeleton, const std::vector<geom::Matrix44>& matrices)
+    auto draw_skeleton = [&](
+        const anim::Skeleton& skeleton,
+        const std::vector<geom::Matrix44>& matrices,
+        const geom::Matrix44& world)
     {
         _ASSERT(skeleton.bones.size() == matrices.size());
         for (int i = 0; i < matrices.size(); ++i)
@@ -125,7 +128,28 @@ int main()
             {
                 continue;
             }
-            debug_shader.draw_line(g_camera, matrices[i].translation(), matrices[bone.parent_index].translation());
+            debug_shader.draw_line(
+                g_camera, 
+                matrices[i].translation() + world.translation(),
+                matrices[bone.parent_index].translation() + world.translation());
+        }
+    };
+    auto draw_skeleton_rotations = [&](
+        const anim::Skeleton& skeleton,
+        const std::vector<geom::Matrix44>& matrices,
+        const geom::Matrix44& world)
+    {
+        _ASSERT(skeleton.bones.size() == matrices.size() && !matrices.empty());
+        for (int i = 0; i < matrices.size(); ++i)
+        {
+            const auto& bone = skeleton.bones[i];
+            auto forward_vector = geom::Quaternion::from_rotation_matrix(matrices[i]) * geom::Vector3::unit_y();
+            debug_shader.draw_line(
+                g_camera, 
+                matrices[i].translation() + world.translation(),
+                matrices[i].translation() + world.translation() + forward_vector * 0.1f,
+                0.02f,
+                graphics::Colour::blue());
         }
     };
 
@@ -178,13 +202,16 @@ int main()
         }
 
         //identity matrix stack for testing
-        std::vector<geom::Matrix44> mat_stack_i(20, geom::Matrix44::identity());
+        std::vector<geom::Matrix44> mat_stack_i(100, geom::Matrix44::identity());
 
         //draw
         //debug_shader.draw_line(g_camera, geom::Vector3::zero(), geom::Vector3::one());
         //unskinned_shader.draw(vao, g_camera.calculate_camera_matrix(), geom::create_translation_matrix_44({ 0.f,0.f,0.f }));
         skinned_shader.draw(vao, g_camera.calculate_camera_matrix(), geom::create_translation_matrix_44({ 0.f,0.f,0.f }), mat_stack, cubeman.skeleton->inv_matrix_stack);
-        draw_skeleton(*cubeman.skeleton, mat_stack);
+        draw_skeleton(*cubeman.skeleton, mat_stack, geom::create_translation_matrix_44({ 0.f,0.f,0.f }));
+        //skinned_shader.draw(vao, g_camera.calculate_camera_matrix(), geom::create_translation_matrix_44({ 0.f,0.f,0.f }), cubeman.skeleton->matrix_stack(), cubeman.skeleton->inv_matrix_stack);
+        draw_skeleton(*cubeman.skeleton, cubeman.skeleton->matrix_stack(), geom::create_translation_matrix_44({ 0.f,0.f, 1.f }));
+        draw_skeleton_rotations(*cubeman.skeleton, cubeman.skeleton->matrix_stack(), geom::create_translation_matrix_44({ 0.f,0.f, 3.f }));
 
 
         glfwSwapBuffers(window);

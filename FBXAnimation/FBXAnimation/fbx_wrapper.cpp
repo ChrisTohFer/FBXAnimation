@@ -93,7 +93,7 @@ namespace
             _ASSERT(false); //wat
             rot_mat = geom::Matrix44::identity();
         }
-        return geom::create_quaternion_from_rotation_matrix(rot_mat);
+        return geom::Quaternion::from_rotation_matrix(rot_mat);
     }
 
     int get_skin_index(const FbxSkin* skin, int control_point_index)
@@ -135,9 +135,12 @@ namespace
 
     void process_skeleton_nodes(FbxSkin& skin, anim::Skeleton& skeleton, std::vector<FbxNode*>& nodes_out)
     {
+        //resize the bone and inverse matrix stack arrays to the cluster count
         int cluster_count = skin.GetClusterCount();
         skeleton.bones.resize(cluster_count);
         skeleton.inv_matrix_stack.resize(cluster_count);
+
+        //iterate over clusters and get their global transforms and hierarchy
         for (int cluster_index = 0; cluster_index < cluster_count; ++cluster_index)
         {
             FbxCluster* cluster = skin.GetCluster(cluster_index);
@@ -200,6 +203,20 @@ namespace
         for (int transform_index = 0; transform_index < skeleton_nodes.size(); ++transform_index)
         {
             FbxNode* node = skeleton_nodes[transform_index];
+
+            //assert if there is any significant scaling as we don't account for this
+            FbxAnimCurve* curve_scale_x = node->LclScaling.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_X);
+            FbxAnimCurve* curve_scale_y = node->LclScaling.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Y);
+            FbxAnimCurve* curve_scale_z = node->LclScaling.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Z);
+            geom::Vector3 scale;
+            scale.x = curve_scale_x ? curve_scale_x->Evaluate(time) : (float)node->LclScaling.Get()[0];
+            scale.y = curve_scale_y ? curve_scale_y->Evaluate(time) : (float)node->LclScaling.Get()[1];
+            scale.z = curve_scale_z ? curve_scale_z->Evaluate(time) : (float)node->LclScaling.Get()[2];
+            _ASSERT(scale.x > 0.999f && scale.x < 1.001f);
+            _ASSERT(scale.y > 0.999f && scale.y < 1.001f);
+            _ASSERT(scale.z > 0.999f && scale.z < 1.001f);
+
+            //get translation and rotation curves
             FbxAnimCurve* curve_trans_x = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_X);
             FbxAnimCurve* curve_trans_y = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Y);
             FbxAnimCurve* curve_trans_z = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Z);
@@ -208,28 +225,30 @@ namespace
             FbxAnimCurve* curve_rot_z = node->LclRotation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Z);
 
             anim::Transform& transform = pose.local_transforms[transform_index];
-            
+
             //check if this is the root
             // -for the root we evaluate the global transform
             // -for all other bones we evaluate the local transform
+            float deg_to_rad = geom::PI / 180.f;
+            float xrot;
+            float yrot;
+            float zrot;
             if (transform_index != 0)
             {
                 //translation
                 transform.translation.x = curve_trans_x ? curve_trans_x->Evaluate(time) : (float)node->LclTranslation.Get()[0];
                 transform.translation.y = curve_trans_y ? curve_trans_y->Evaluate(time) : (float)node->LclTranslation.Get()[1];
                 transform.translation.z = curve_trans_z ? curve_trans_z->Evaluate(time) : (float)node->LclTranslation.Get()[2];
-                transform.translation = right_to_left_hand(transform.translation);
 
                 //rotation
-                float deg_to_rad = geom::PI / 180.f;
-                float xrot = deg_to_rad * (curve_rot_x ? curve_rot_x->Evaluate(time) : (float)node->LclRotation.Get()[0]);
-                float yrot = deg_to_rad * (curve_rot_y ? curve_rot_y->Evaluate(time) : (float)node->LclRotation.Get()[1]);
-                float zrot = deg_to_rad * (curve_rot_z ? curve_rot_z->Evaluate(time) : (float)node->LclRotation.Get()[2]);
+                xrot = deg_to_rad * (curve_rot_x ? curve_rot_x->Evaluate(time) : (float)node->LclRotation.Get()[0]);
+                yrot = deg_to_rad * (curve_rot_y ? curve_rot_y->Evaluate(time) : (float)node->LclRotation.Get()[1]);
+                zrot = deg_to_rad * (curve_rot_z ? curve_rot_z->Evaluate(time) : (float)node->LclRotation.Get()[2]);
 
                 FbxEuler::EOrder rot_order;
                 node->GetRotationOrder(FbxNode::EPivotSet::eSourcePivot, rot_order);
 
-                transform.rotation = right_to_left_hand(get_quaternion_from_fbx_euler(xrot, yrot, zrot, rot_order));
+                transform.rotation = get_quaternion_from_fbx_euler(xrot, yrot, zrot, rot_order);
             }
             else
             {
@@ -238,23 +257,18 @@ namespace
                 auto fbx_global_translation = global_transform.GetT();
                 auto fbx_global_rotation = global_transform.GetR();
 
-                geom::Vector3 global_translation;
-                global_translation.x = 0.01f * (float)fbx_global_translation[0];
-                global_translation.y = 0.01f * (float)fbx_global_translation[1];
-                global_translation.z = 0.01f * (float)fbx_global_translation[2];
-                global_translation = right_to_left_hand(global_translation);
+                transform.translation.x = 0.01f * (float)fbx_global_translation[0];
+                transform.translation.y = 0.01f * (float)fbx_global_translation[1];
+                transform.translation.z = 0.01f * (float)fbx_global_translation[2];
 
-                geom::Quaternion global_rotation;
-                float deg_to_rad = geom::PI / 180.f;
-                float xrot = deg_to_rad * (float)fbx_global_rotation[0];
-                float yrot = deg_to_rad * (float)fbx_global_rotation[1];
-                float zrot = deg_to_rad * (float)fbx_global_rotation[2];
-                global_rotation = right_to_left_hand(get_quaternion_from_fbx_euler(xrot, yrot, zrot, FbxEuler::EOrder::eOrderXYZ));
+                xrot = deg_to_rad * (float)fbx_global_rotation[0];
+                yrot = deg_to_rad * (float)fbx_global_rotation[1];
+                zrot = deg_to_rad * (float)fbx_global_rotation[2];
 
-                //global_transform
-                transform.translation = global_translation;
-                transform.rotation = global_rotation;
+                transform.rotation = get_quaternion_from_fbx_euler(xrot, yrot, zrot, FbxEuler::EOrder::eOrderXYZ);
             }
+            transform.translation = right_to_left_hand(transform.translation) / 20.f;
+            transform.rotation = right_to_left_hand(transform.rotation);
         }
 
         return pose;
@@ -315,9 +329,6 @@ namespace
             //error
             return;
         }
-
-
-        scene.GetGlobalSettings().SetAxisSystem(FbxAxisSystem(FbxAxisSystem::EPreDefinedAxisSystem::eOpenGL));
 
         //get mesh
         int root_child_count = root_node->GetChildCount();

@@ -25,6 +25,7 @@ namespace geom
 
         static Quaternion identity() { return { 0,0,0,1.f }; }
         static Quaternion slerp(const Quaternion& q1, const Quaternion& q2, float t);
+        static Quaternion from_rotation_matrix(const Matrix44& mat);
 
         Quaternion raised_to_power(float power) const;
         Quaternion normalized() const;
@@ -158,6 +159,44 @@ namespace geom
         //result.y = (qa.y * ratioA + qb.y * ratioB);
         //result.z = (qa.z * ratioA + qb.z * ratioB);
         //return result;
+    }
+
+    inline Quaternion Quaternion::from_rotation_matrix(const Matrix44& m)
+    {
+        //copied from https://d3cw3dd2w32x2b.cloudfront.net/wp-content/uploads/2015/01/matrix-to-quat.pdf
+        //the source uses row vectors, so the matrix defined here is a transposed version
+
+        Quaternion q;
+        float t;
+        if (m.get(2, 2) < 0)
+        {
+            if (m.get(0, 0) > m.get(1, 1))
+            {
+                t = 1 + m.get(0, 0) - m.get(1, 1) - m.get(2, 2);
+                q = { t, m.get(1, 0) + m.get(0, 1), m.get(0, 2) + m.get(2, 0), m.get(2, 1) - m.get(1, 2) };
+            }
+            else
+            {
+                t = 1 - m.get(0, 0) + m.get(1, 1) - m.get(2, 2);
+                q = { m.get(1, 0) + m.get(0, 1), t, m.get(2, 1) + m.get(1, 2), m.get(0, 2) - m.get(2, 0) };
+            }
+        }
+        else
+        {
+            if (m.get(0, 0) < -m.get(1, 1))
+            {
+                t = 1 - m.get(0, 0) - m.get(1, 1) + m.get(2, 2);
+                q = { m.get(0, 2) + m.get(2, 0), m.get(2, 1) + m.get(1, 2), t, m.get(1, 0) - m.get(0, 1) };
+            }
+            else
+            {
+                t = 1 + m.get(0, 0) + m.get(1, 1) + m.get(2, 2);
+                q = { m.get(2, 1) - m.get(1, 2), m.get(0, 2) - m.get(2, 0), m.get(1, 0) - m.get(0, 1), t };
+            }
+        }
+        q = q * (0.5f / sqrtf(t));
+
+        return q;
     }
 
     inline Quaternion Quaternion::raised_to_power(float power) const
