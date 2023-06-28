@@ -23,6 +23,8 @@ FBXManagerWrapper::~FBXManagerWrapper()
 
 namespace
 {
+    //scene loading and unloading
+
     FbxScene* load(FbxManager& manager, const char* filename)
     {
         FbxImporter* importer = FbxImporter::Create(&manager, "");
@@ -50,6 +52,23 @@ namespace
     {
         scene.Destroy();
     }
+
+    //context
+
+    struct LoadContext
+    {
+        FbxScene& scene;
+        FbxFileContent& result;
+
+        FbxNode* root_node = nullptr;
+        FbxNode* mesh_node = nullptr;
+        FbxMesh* mesh = nullptr;
+        FbxSkin* skin = nullptr;
+
+        std::vector<FbxNode*> skeleton_nodes;
+    };
+
+    //conversions
 
     geom::Quaternion right_to_left_hand(geom::Quaternion q)
     {
@@ -96,6 +115,8 @@ namespace
         return geom::Quaternion::from_rotation_matrix(rot_mat);
     }
 
+    //skin + skeleton processing
+
     int get_skin_index(const FbxSkin* skin, int control_point_index)
     {
         int skinned_index = 0;
@@ -133,19 +154,21 @@ namespace
         return skinned_index;
     }
 
-    void process_skeleton_nodes(FbxSkin& skin, anim::Skeleton& skeleton, std::vector<FbxNode*>& nodes_out)
+    void process_skeleton_nodes(LoadContext& context)
     {
+        anim::Skeleton& skeleton = *context.result.skeleton;
+
         //resize the bone and inverse matrix stack arrays to the cluster count
-        int cluster_count = skin.GetClusterCount();
+        int cluster_count = context.skin->GetClusterCount();
         skeleton.bones.resize(cluster_count);
         skeleton.inv_matrix_stack.resize(cluster_count);
 
         //iterate over clusters and get their global transforms and hierarchy
         for (int cluster_index = 0; cluster_index < cluster_count; ++cluster_index)
         {
-            FbxCluster* cluster = skin.GetCluster(cluster_index);
+            FbxCluster* cluster = context.skin->GetCluster(cluster_index);
             FbxNode* linked_node = cluster->GetLink();
-            nodes_out.push_back(linked_node);
+            context.skeleton_nodes.push_back(linked_node);
 
             //debug
             std::cout << linked_node->GetName() << "\n";
@@ -174,9 +197,9 @@ namespace
                 .inverse();
 
             bone.parent_index = -1;
-            for (int i = 0; i < nodes_out.size(); ++i)
+            for (int i = 0; i < context.skeleton_nodes.size(); ++i)
             {
-                auto& node_out = nodes_out[i];
+                auto& node_out = context.skeleton_nodes[i];
                 if (node_out == linked_node->GetParent())
                 {
                     bone.parent_index = i;
@@ -189,6 +212,8 @@ namespace
             skeleton.bones[cluster_index] = bone;
         }
     }
+
+    //anim + keyframe processing
 
     anim::Pose process_keyframe(
         FbxTime& time,
@@ -274,8 +299,12 @@ namespace
         return pose;
     }
 
-    void process_animations(FbxScene& scene, std::vector<FbxNode*>& skeleton_nodes, FbxFileContent& content)
+    void process_animations(LoadContext& context)
     {
+        auto& animations = context.result.animations;
+        auto& skeleton = *context.result.skeleton;
+        auto& scene = context.scene;
+
         //loop over anim stacks
         for (int i = 0; i < scene.GetSrcObjectCount<FbxAnimStack>(); ++i)
         {
@@ -286,8 +315,8 @@ namespace
             _ASSERT(anim_stack->GetSrcObjectCount<FbxAnimLayer>() == 1);
             FbxAnimLayer* anim_layer = anim_stack->GetSrcObject<FbxAnimLayer>(0);
 
-            content.animations.push_back({ anim_stack->GetName(), anim::Animation(*content.skeleton) });
-            anim::Animation& animation = content.animations.back().animation;
+            animations.push_back({ anim_stack->GetName(), anim::Animation(skeleton) });
+            anim::Animation& animation = animations.back().animation;
 
             scene.SetCurrentAnimationStack(anim_stack);
 
@@ -309,7 +338,7 @@ namespace
                 FbxTime ftime;
                 ftime.SetMilliSeconds((FbxLongLong)(time * 1000.f));
                 animation.add_keyframe(
-                    process_keyframe(ftime, *content.skeleton, skeleton_nodes, anim_layer),
+                    process_keyframe(ftime, skeleton, context.skeleton_nodes, anim_layer),
                     time);
 
                 if (final_frame)
@@ -320,56 +349,58 @@ namespace
         }
     }
 
-    void read_file_content(FbxScene& scene, FbxFileContent& content)
+    //main funcs
+
+    void read_file_content(LoadContext& context)
     {
         //get root node
-        FbxNode* root_node = scene.GetRootNode();
-        if (root_node == nullptr)
+        context.root_node = context.scene.GetRootNode();
+        if (context.root_node == nullptr)
         {
             //error
             return;
         }
+        FbxNode& root_node = *context.root_node;
 
         //get mesh
-        int root_child_count = root_node->GetChildCount();
+        int root_child_count = root_node.GetChildCount();
 
-        FbxNode* mesh_node = nullptr;   //non-const so we can evaluate the transform
-        const FbxMesh* mesh = nullptr;
         for (int i = 0; i < root_child_count; ++i)
         {
-            auto* child = root_node->GetChild(i);
-            mesh = child->GetMesh();
-            if (mesh != nullptr)
+            auto* child = root_node.GetChild(i);
+            context.mesh = child->GetMesh();
+            if (context.mesh != nullptr)
             {
-                mesh_node = child;
+                context.mesh_node = child;
                 break;
             }
         }
-        if (mesh == nullptr)
+        if (context.mesh == nullptr)
         {
             //error
             return;
         }
+        FbxMesh& mesh = *context.mesh;
 
         //get skin info
-        FbxSkin* skin = nullptr;
-        if (mesh->GetDeformerCount(FbxDeformer::EDeformerType::eSkin) > 0)
+        if (mesh.GetDeformerCount(FbxDeformer::EDeformerType::eSkin) > 0)
         {
-            skin = static_cast<FbxSkin*>(mesh->GetDeformer(0, FbxDeformer::EDeformerType::eSkin));
+            context.skin = static_cast<FbxSkin*>(mesh.GetDeformer(0, FbxDeformer::EDeformerType::eSkin));
         }
 
         //get vertices
-        FbxVector4* mesh_control_points = mesh->GetControlPoints();
-        int mesh_control_point_count = mesh->GetControlPointsCount();
-        auto& mesh_transform = mesh_node->EvaluateGlobalTransform();
+        FbxVector4* mesh_control_points = mesh.GetControlPoints();
+        int mesh_control_point_count = mesh.GetControlPointsCount();
+        auto& mesh_transform = context.mesh_node->EvaluateGlobalTransform();
 
-        content.vertices.reserve(mesh_control_point_count);
+        std::vector<SkinnedVertex>& vertices = context.result.vertices;
+        vertices.reserve(mesh_control_point_count);
         for (int control_point_index = 0; control_point_index < mesh_control_point_count; ++control_point_index)
         {
-            int skinned_index = get_skin_index(skin, control_point_index);
+            int skinned_index = get_skin_index(context.skin, control_point_index);
 
             auto point = mesh_transform.MultT(mesh_control_points[control_point_index]);
-            content.vertices.push_back({ 
+            vertices.push_back({ 
                 right_to_left_hand(geom::Vector3{
                     0.01f * (float)point.mData[0],
                     0.01f * (float)point.mData[1],
@@ -380,23 +411,24 @@ namespace
         }
 
         //get triangles
-        int polygon_count = mesh->GetPolygonCount();
+        int polygon_count = mesh.GetPolygonCount();
+        std::vector<unsigned int>& indices = context.result.indices;
+        indices.reserve(polygon_count * 3);
         for (int i = 0; i < polygon_count; ++i)
         {
-            int num_polygon_vertices = mesh->GetPolygonSize(i);
+            int num_polygon_vertices = mesh.GetPolygonSize(i);
             _ASSERT(num_polygon_vertices == 3);
 
-            content.indices.push_back(mesh->GetPolygonVertex(i, 0));
-            content.indices.push_back(mesh->GetPolygonVertex(i, 1));
-            content.indices.push_back(mesh->GetPolygonVertex(i, 2));
+            indices.push_back(mesh.GetPolygonVertex(i, 0));
+            indices.push_back(mesh.GetPolygonVertex(i, 1));
+            indices.push_back(mesh.GetPolygonVertex(i, 2));
         }
 
-        content.skeleton = std::make_unique<anim::Skeleton>();
-        std::vector<FbxNode*> skeleton_nodes;
-        process_skeleton_nodes(*skin, *content.skeleton, skeleton_nodes);
+        context.result.skeleton = std::make_unique<anim::Skeleton>();
+        process_skeleton_nodes(context);
 
         //get animations
-        process_animations(scene, skeleton_nodes, content);
+        process_animations(context);
     }
 
 }
@@ -414,7 +446,9 @@ FbxFileContent FBXManagerWrapper::load_file_content(const char* filename)
         return result;
     }
 
-    read_file_content(*scene, result);
+    LoadContext context = { *scene, result };
+
+    read_file_content(context);
 
     unload(*scene);
 
