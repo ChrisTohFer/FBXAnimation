@@ -218,16 +218,23 @@ namespace
     anim::Pose process_keyframe(
         FbxTime& time,
         const anim::Skeleton& skeleton,
-        std::vector<FbxNode*> skeleton_nodes,
+        const std::vector<FbxNode*>& skeleton_nodes,
         FbxAnimLayer* anim_layer)
     {
         anim::Pose pose;
         pose.skeleton = &skeleton;
 
+        //iterate over bones
+        std::vector<FbxAMatrix*> global_transforms;
+        global_transforms.reserve(skeleton_nodes.size());
         pose.local_transforms.resize(skeleton_nodes.size());
+
         for (int transform_index = 0; transform_index < skeleton_nodes.size(); ++transform_index)
         {
             FbxNode* node = skeleton_nodes[transform_index];
+
+            //cache the global transform
+            global_transforms.push_back(&node->EvaluateGlobalTransform(time));
 
             //assert if there is any significant scaling as we don't account for this
             FbxAnimCurve* curve_scale_x = node->LclScaling.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_X);
@@ -241,57 +248,29 @@ namespace
             _ASSERT(scale.y > 0.999f && scale.y < 1.001f);
             _ASSERT(scale.z > 0.999f && scale.z < 1.001f);
 
-            //get translation and rotation curves
-            FbxAnimCurve* curve_trans_x = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_X);
-            FbxAnimCurve* curve_trans_y = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Y);
-            FbxAnimCurve* curve_trans_z = node->LclTranslation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Z);
-            FbxAnimCurve* curve_rot_x = node->LclRotation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_X);
-            FbxAnimCurve* curve_rot_y = node->LclRotation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Y);
-            FbxAnimCurve* curve_rot_z = node->LclRotation.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_Z);
-
             anim::Transform& transform = pose.local_transforms[transform_index];
 
-            //check if this is the root
-            // -for the root we evaluate the global transform
-            // -for all other bones we evaluate the local transform
+            //get the local transform by multiplying global transform by inverse of parent transform
+            int parent_index = skeleton.bones[transform_index].parent_index;
+            FbxAMatrix local_transform = parent_index == -1 ?
+                *global_transforms[transform_index] :
+                global_transforms[parent_index]->Inverse() * (*global_transforms[transform_index]);
+
+            //extract the translation and rotation
+            auto fbx_translation = local_transform.GetT();
+            auto fbx_rotation = local_transform.GetR();
+
+            transform.translation.x = (float)fbx_translation[0];
+            transform.translation.y = (float)fbx_translation[1];
+            transform.translation.z = (float)fbx_translation[2];
+
             float deg_to_rad = geom::PI / 180.f;
-            float xrot;
-            float yrot;
-            float zrot;
-            if (transform_index != 0)
-            {
-                //translation
-                transform.translation.x = curve_trans_x ? curve_trans_x->Evaluate(time) : (float)node->LclTranslation.Get()[0];
-                transform.translation.y = curve_trans_y ? curve_trans_y->Evaluate(time) : (float)node->LclTranslation.Get()[1];
-                transform.translation.z = curve_trans_z ? curve_trans_z->Evaluate(time) : (float)node->LclTranslation.Get()[2];
+            float xrot = deg_to_rad * (float)fbx_rotation[0];
+            float yrot = deg_to_rad * (float)fbx_rotation[1];
+            float zrot = deg_to_rad * (float)fbx_rotation[2];
+            transform.rotation = get_quaternion_from_fbx_euler(xrot, yrot, zrot, FbxEuler::EOrder::eOrderXYZ);
 
-                //rotation
-                xrot = deg_to_rad * (curve_rot_x ? curve_rot_x->Evaluate(time) : (float)node->LclRotation.Get()[0]);
-                yrot = deg_to_rad * (curve_rot_y ? curve_rot_y->Evaluate(time) : (float)node->LclRotation.Get()[1]);
-                zrot = deg_to_rad * (curve_rot_z ? curve_rot_z->Evaluate(time) : (float)node->LclRotation.Get()[2]);
-
-                FbxEuler::EOrder rot_order;
-                node->GetRotationOrder(FbxNode::EPivotSet::eSourcePivot, rot_order);
-
-                transform.rotation = get_quaternion_from_fbx_euler(xrot, yrot, zrot, rot_order);
-            }
-            else
-            {
-                //apply global transformation to the root node
-                auto& global_transform = node->EvaluateGlobalTransform(time);
-                auto fbx_global_translation = global_transform.GetT();
-                auto fbx_global_rotation = global_transform.GetR();
-
-                transform.translation.x = 0.01f * (float)fbx_global_translation[0];
-                transform.translation.y = 0.01f * (float)fbx_global_translation[1];
-                transform.translation.z = 0.01f * (float)fbx_global_translation[2];
-
-                xrot = deg_to_rad * (float)fbx_global_rotation[0];
-                yrot = deg_to_rad * (float)fbx_global_rotation[1];
-                zrot = deg_to_rad * (float)fbx_global_rotation[2];
-
-                transform.rotation = get_quaternion_from_fbx_euler(xrot, yrot, zrot, FbxEuler::EOrder::eOrderXYZ);
-            }
+            //convert coordinate systems
             transform.translation = right_to_left_hand(transform.translation) * 0.01f;
             transform.rotation = right_to_left_hand(transform.rotation);
         }

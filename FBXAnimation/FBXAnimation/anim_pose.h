@@ -9,6 +9,7 @@ namespace anim
     using Translation = geom::Vector3;
     using Rotation = geom::Quaternion;
 
+    //simple transform consisting of a vector3 translation and quaternion rotation
     struct Transform
     {
         Translation translation;
@@ -17,6 +18,7 @@ namespace anim
         geom::Matrix44 calculate_matrix() const;
     };
 
+    //node hierarchy, transforms, and inverse transforms
     struct Skeleton
     {
         struct Bone
@@ -31,6 +33,7 @@ namespace anim
         std::vector<geom::Matrix44> matrix_stack();
     };
 
+    //a collection of local transforms that represent a pose for a referenced skeleton 
     struct Pose
     {
         const Skeleton* skeleton;
@@ -40,6 +43,7 @@ namespace anim
         std::vector<geom::Matrix44> get_matrix_stack() const;
     };
 
+    //a collection of timestamped poses (keyframes) that can be sampled for a pose using a time parameter
     class Animation
     {
     public:
