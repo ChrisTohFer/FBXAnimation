@@ -153,6 +153,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\external\glad\src\glad.c" />
     <ClCompile Include="fbx_wrapper.cpp" />
+    <ClCompile Include="file_management\file_scanner.cpp" />
     <ClCompile Include="graphics\camera.cpp" />
     <ClCompile Include="graphics\shader.cpp" />
     <ClCompile Include="graphics\vertex_array.cpp" />
@@ -169,6 +170,8 @@
   <ItemGroup>
     <ClInclude Include="anim_pose.h" />
     <ClInclude Include="fbx_wrapper.h" />
+    <ClInclude Include="file_management\filepaths.h" />
+    <ClInclude Include="file_management\file_scanner.h" />
     <ClInclude Include="graphics\camera.h" />
     <ClInclude Include="graphics\colour.h" />
     <ClInclude Include="graphics\core_shaders.h" />

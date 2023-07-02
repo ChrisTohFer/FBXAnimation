@@ -8,7 +8,14 @@ opengl screenspace coords:
 	y: bottom is -1.0, top is 1.0
 
 next:
-	Add ImGui
-	-Allow selection of mesh and animation through imgui
-	-All meshes in assets folder can be loaded in instead of a hardcoded one
+	File management
+	-Convert fbx files to other file types via separate program
+		-Skeleton
+		-Mesh
+		-Animations
 	
+	-Scan assets folder for files of each type
+	-Load assets on demand
+	
+	Animation
+	-Find what causes bones to periodically disappear (possibly NaNs, but why?)

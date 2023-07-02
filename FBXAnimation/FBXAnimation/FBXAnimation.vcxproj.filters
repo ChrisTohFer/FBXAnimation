@@ -22,6 +22,9 @@
     <Filter Include="Code Files\imgui">
       <UniqueIdentifier>{2d885031-0b21-4413-8a92-c7e7ab66b82f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Code Files\file_management">
+      <UniqueIdentifier>{58f29c4f-95f2-4607-97b2-a0d9f7e2500e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="graphics\vertex_array.cpp">
@@ -65,6 +68,9 @@
     </ClCompile>
     <ClCompile Include="imgui\imgui_impl_opengl3.cpp">
       <Filter>Code Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="file_management\file_scanner.cpp">
+      <Filter>Code Files\file_management</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -133,6 +139,12 @@
     </ClInclude>
     <ClInclude Include="imgui\imgui_impl_opengl3_loader.h">
       <Filter>Code Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="file_management\file_scanner.h">
+      <Filter>Code Files\file_management</Filter>
+    </ClInclude>
+    <ClInclude Include="file_management\filepaths.h">
+      <Filter>Code Files\file_management</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

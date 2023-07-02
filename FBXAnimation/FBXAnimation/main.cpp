@@ -7,6 +7,8 @@
 
 #include "anim_pose.h"
 
+#include "file_management/file_scanner.h"
+
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 #include "imgui/imgui_impl_glfw.h"
@@ -110,15 +112,26 @@ int main()
     ImGui_ImplOpenGL3_Init("#version 330 core");
 
     //setup draw info/assets
+    auto fbx_files = file::fbx_paths();
     FBXManagerWrapper fbx_manager;
-    FbxFileContent cubeman = fbx_manager.load_file_content("../../assets/fbx/Capoeira.fbx");
-    graphics::VertexArray<SkinnedVertex> vao(
-        graphics::VertexBuffer(cubeman.vertices),
-        cubeman.indices.data(),
-        (int)cubeman.indices.size());
+    struct Character
+    {
+        FbxFileContent file_content;
+        graphics::VertexArray<SkinnedVertex> vao;
+    };
+    std::vector<Character> characters;
+    for (auto& fbx_file : fbx_files)
+    {
+        auto filepath = fbx_file.string();
+        auto file_content = fbx_manager.load_file_content(filepath.c_str());
+        auto vao = graphics::VertexArray<SkinnedVertex>(
+            graphics::VertexBuffer(file_content.vertices),
+            file_content.indices.data(),
+            (int)file_content.indices.size());
+        characters.push_back({ std::move(file_content), std::move(vao) });
+    }
 
-    int anim_index = 0;
-
+    //set up shaders
     graphics::UnskinnedMeshShader<SkinnedVertex> unskinned_shader;
     graphics::SkinnedMeshShader<SkinnedVertex> skinned_shader;
     graphics::DebugShader debug_shader;
@@ -214,6 +227,7 @@ int main()
                 RefPose,
             };
             Type type = RefPose;
+            int mesh_index = 0;
             int anim_index = 0;
             geom::Vector3 translation = geom::Vector3::zero();
             geom::Vector3 euler = geom::Vector3::zero();
@@ -236,6 +250,12 @@ int main()
         for (int i = 0; i < s_instances.size(); ++i)
         {
             auto& instance = s_instances[i];
+            if (instance.mesh_index >= characters.size())
+            {
+                continue;
+            }
+            auto& character = characters[instance.mesh_index];
+
             //draw the instance
             auto world =
                 geom::create_translation_matrix_44(instance.translation) *
@@ -247,13 +267,13 @@ int main()
             auto create_matrix_stack = [&]()
             {
                 std::vector<geom::Matrix44> mat_stack;
-                if (cubeman.animations.size() > instance.anim_index)
+                if (character.file_content.animations.size() > instance.anim_index)
                 {
-                    mat_stack = cubeman.animations[instance.anim_index].animation.get_pose(s_time, true).get_matrix_stack();
+                    mat_stack = character.file_content.animations[instance.anim_index].animation.get_pose(s_time, true).get_matrix_stack();
                 }
                 else
                 {
-                    mat_stack.resize(cubeman.skeleton->bones.size(), geom::Matrix44::identity());
+                    mat_stack.resize(character.file_content.skeleton->bones.size(), geom::Matrix44::identity());
                 }
 
                 return mat_stack;
@@ -263,17 +283,17 @@ int main()
             {
             case Instance::SkinnedMesh:
             {
-                skinned_shader.draw(vao, g_camera.calculate_camera_matrix(), world, create_matrix_stack(), cubeman.skeleton->inv_matrix_stack);
+                skinned_shader.draw(character.vao, g_camera.calculate_camera_matrix(), world, create_matrix_stack(), character.file_content.skeleton->inv_matrix_stack);
                 break;
             }
             case Instance::UnskinnedMesh:
-                unskinned_shader.draw(vao, g_camera.calculate_camera_matrix(), world);
+                unskinned_shader.draw(character.vao, g_camera.calculate_camera_matrix(), world);
                 break;
             case Instance::SkinnedPose:
-                draw_skeleton(*cubeman.skeleton, create_matrix_stack(), world);
+                draw_skeleton(*character.file_content.skeleton, create_matrix_stack(), world);
                 break;
             case Instance::RefPose:
-                draw_skeleton(*cubeman.skeleton, cubeman.skeleton->matrix_stack(), world);
+                draw_skeleton(*character.file_content.skeleton, character.file_content.skeleton->matrix_stack(), world);
                 break;
             }
 
@@ -290,6 +310,7 @@ int main()
                 int type_int = (int)instance.type;
                 ImGui::InputInt("Type", &type_int);
                 instance.type = (Instance::Type)type_int;
+                ImGui::InputInt("Mesh", &instance.mesh_index);
                 ImGui::InputInt("Anim", &instance.anim_index);
                 ImGui::DragFloat3("Position", &instance.translation.x, 0.2f);
                 ImGui::DragFloat3("Rotation", &instance.euler.x, 5.f);

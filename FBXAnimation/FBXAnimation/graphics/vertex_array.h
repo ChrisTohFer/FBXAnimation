@@ -57,12 +57,11 @@ namespace graphics
     template<Vertex VertexType>
     VertexArray<VertexType>::VertexArray(VertexArray<VertexType>&& other)
         : m_vao(other.m_vao)
-        , m_vbo(other.m_vbo)
+        , m_vbo(std::move(other.m_vbo))
         , m_ibo(other.m_ibo)
         , m_num_indices(other.m_num_indices)
     {
         other.m_vao = 0;
-        other.m_vbo = 0;
         other.m_ibo = 0;
         other.m_num_indices = 0;
     }
