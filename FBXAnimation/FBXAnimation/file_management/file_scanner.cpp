@@ -9,6 +9,7 @@ namespace file
         //iterate over all files in the fbx path and return any that have the .fbx extension
         for (auto& dir_entry : std::filesystem::recursive_directory_iterator(g_fbx_path))
         {
+            //unsure if this has the correct case-sensitivity
             if (dir_entry.path().extension() == std::filesystem::path(".fbx"))
             {
                 result.push_back(dir_entry.path());
