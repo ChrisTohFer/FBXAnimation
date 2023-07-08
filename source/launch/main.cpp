@@ -7,7 +7,7 @@
 
 #include "anim_pose.h"
 
-#include "file_management/file_scanner.h"
+#include "file/file_scanner.h"
 
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
