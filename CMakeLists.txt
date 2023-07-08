@@ -59,7 +59,8 @@ target_link_libraries(glfw INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw-
 
 add_library(FbxSdk INTERFACE)
 target_include_directories(FbxSdk INTERFACE "external/FBX SDK/2020.0.1/include")
-target_link_libraries(FbxSdk INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/external/FBX SDK/2020.0.1/lib/vs2017/x64/release/libfbxsdk.lib")
+target_link_libraries(FbxSdk INTERFACE optimized "${CMAKE_CURRENT_SOURCE_DIR}/external/FBX SDK/2020.0.1/lib/vs2017/x64/release/libfbxsdk.lib")
+target_link_libraries(FbxSdk INTERFACE debug "${CMAKE_CURRENT_SOURCE_DIR}/external/FBX SDK/2020.0.1/lib/vs2017/x64/debug/libfbxsdk.lib")
 target_compile_definitions(FbxSdk INTERFACE "FBXSDK_SHARED")
 
 #third party with source
@@ -69,20 +70,16 @@ create_library(imgui "external" glfw)
 #own libraries
 create_library(maths "source")
 create_library("file" "source")
+create_library(animation "source" maths)
 create_library(graphics "source" maths glad)
 
 #create executable
 collect_and_filter_source_files("source/launch" LaunchFiles)
 add_executable(launch "${LaunchFiles}")
-target_link_libraries(launch maths)
-target_link_libraries(launch imgui)
-target_link_libraries(launch "file")
-target_link_libraries(launch graphics)
-target_link_libraries(launch glad)
-target_link_libraries(launch glfw)
-target_link_libraries(launch FbxSdk)
+target_link_libraries(launch
+	animation maths imgui "file" graphics glad glfw FbxSdk)
 
 #group projects
 set_target_properties(glad imgui PROPERTIES FOLDER "ThirdPartyLibs")
-set_target_properties(maths "file" graphics PROPERTIES FOLDER "Libraries")
+set_target_properties(animation maths "file" graphics PROPERTIES FOLDER "Libraries")
 set_target_properties(launch PROPERTIES FOLDER "Executables")

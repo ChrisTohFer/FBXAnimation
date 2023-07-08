@@ -1,81 +1,17 @@
-#pragma once
-
-#include "maths/geometry.h"
-
-#include <vector>
+#include "anim_pose.h"
 
 namespace anim
 {
-    using Translation = geom::Vector3;
-    using Rotation = geom::Quaternion;
-
-    //simple transform consisting of a vector3 translation and quaternion rotation
-    struct Transform
-    {
-        Translation translation;
-        Rotation rotation;
-
-        geom::Matrix44 calculate_matrix() const;
-    };
-
-    //node hierarchy, transforms, and inverse transforms
-    struct Skeleton
-    {
-        struct Bone
-        {
-            int parent_index;
-            Transform global_transform;
-        };
-
-        std::vector<Bone> bones;
-        std::vector<geom::Matrix44> inv_matrix_stack;
-        
-        std::vector<geom::Matrix44> matrix_stack();
-    };
-
-    //a collection of local transforms that represent a pose for a referenced skeleton 
-    struct Pose
-    {
-        const Skeleton* skeleton;
-        std::vector<Transform> local_transforms;
-
-        static Pose interpolate(const Pose&, const Pose&, float t);
-        std::vector<geom::Matrix44> get_matrix_stack() const;
-    };
-
-    //a collection of timestamped poses (keyframes) that can be sampled for a pose using a time parameter
-    class Animation
-    {
-    public:
-        Animation(const Skeleton& skeleton) : m_skeleton(skeleton) {}
-        void add_keyframe(Pose, float time);
-
-        float duration() const { return m_duration; }
-        Pose get_pose(float time, bool loop = false) const;
-
-    private:
-        struct KeyFrame
-        {
-            Pose pose;
-            float time;
-        };
-        const Skeleton& m_skeleton;
-        std::vector<KeyFrame> m_key_frames;
-        float m_duration = -1.f;
-    };
-
-    //inline defs
-
     //transform
 
-    inline geom::Matrix44 Transform::calculate_matrix() const
+    geom::Matrix44 Transform::calculate_matrix() const
     {
         return geom::create_translation_matrix_44(translation) * geom::create_rotation_matrix_from_quaternion(rotation);
     }
 
     //skeleton
 
-    inline std::vector<geom::Matrix44> Skeleton::matrix_stack()
+    std::vector<geom::Matrix44> Skeleton::matrix_stack()
     {
         std::vector<geom::Matrix44> matrices;
         for (auto& bone : bones)
@@ -87,7 +23,7 @@ namespace anim
 
     //pose
 
-    inline Pose Pose::interpolate(const Pose& p1, const Pose& p2, float t)
+    Pose Pose::interpolate(const Pose& p1, const Pose& p2, float t)
     {
         _ASSERT(p1.local_transforms.size() == p2.local_transforms.size());
         _ASSERT(p1.skeleton == p2.skeleton);
@@ -111,7 +47,7 @@ namespace anim
         return interpolated_pose;
     }
 
-    inline std::vector<geom::Matrix44> Pose::get_matrix_stack() const
+    std::vector<geom::Matrix44> Pose::get_matrix_stack() const
     {
         std::vector<geom::Matrix44> stack;
         stack.resize(local_transforms.size());
@@ -124,13 +60,13 @@ namespace anim
             auto& parent_matrix = stack[skeleton->bones[i].parent_index];
             stack[i] = parent_matrix * local_transforms[i].calculate_matrix();
         }
-        
+
         return stack;
     }
 
     //animation
-    
-    inline void Animation::add_keyframe(Pose pose, float time)
+
+    void Animation::add_keyframe(Pose pose, float time)
     {
         //assume that keyframes will be added in order for now
         _ASSERT(time > m_duration);
@@ -139,7 +75,7 @@ namespace anim
         m_key_frames.push_back({ std::move(pose), time });
     }
 
-    inline Pose Animation::get_pose(float time, bool loop) const
+    Pose Animation::get_pose(float time, bool loop) const
     {
         //if loop is enabled then ensure time is within duration
         time = loop ? fmodf(time, m_duration) : time;

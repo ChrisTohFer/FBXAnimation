@@ -5,7 +5,7 @@
 #include "graphics/camera.h"
 #include "graphics/core_shaders.h"
 
-#include "anim_pose.h"
+#include "animation/anim_pose.h"
 
 #include "file/file_scanner.h"
 
