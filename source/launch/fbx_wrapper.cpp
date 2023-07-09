@@ -225,7 +225,7 @@ namespace
         pose.skeleton = &skeleton;
 
         //iterate over bones
-        std::vector<FbxAMatrix*> global_transforms;
+        std::vector<FbxAMatrix> global_transforms;
         global_transforms.reserve(skeleton_nodes.size());
         pose.local_transforms.resize(skeleton_nodes.size());
 
@@ -234,7 +234,10 @@ namespace
             FbxNode* node = skeleton_nodes[transform_index];
 
             //cache the global transform
-            global_transforms.push_back(&node->EvaluateGlobalTransform(time));
+            global_transforms.push_back(node->EvaluateGlobalTransform(time));
+
+            //we don't animate scale, set to zero
+            global_transforms.back().SetS(FbxVector4{ 1.f, 1.f, 1.f, 1.f });
 
             //assert if there is any significant scaling as we don't account for this
             FbxAnimCurve* curve_scale_x = node->LclScaling.GetCurve(anim_layer, FBXSDK_CURVENODE_COMPONENT_X);
@@ -253,8 +256,8 @@ namespace
             //get the local transform by multiplying global transform by inverse of parent transform
             int parent_index = skeleton.bones[transform_index].parent_index;
             FbxAMatrix local_transform = parent_index == -1 ?
-                *global_transforms[transform_index] :
-                global_transforms[parent_index]->Inverse() * (*global_transforms[transform_index]);
+                global_transforms[transform_index] :
+                global_transforms[parent_index].Inverse() * global_transforms[transform_index];
 
             //extract the translation and rotation
             auto fbx_translation = local_transform.GetT();
