@@ -155,24 +155,6 @@ int main()
                 world * matrices[bone.parent_index].translation());
         }
     };
-    auto draw_skeleton_rotations = [&](
-        const anim::Skeleton& skeleton,
-        const std::vector<geom::Matrix44>& matrices,
-        const geom::Matrix44& world)
-    {
-        _ASSERT(skeleton.bones.size() == matrices.size() && !matrices.empty());
-        for (int i = 0; i < matrices.size(); ++i)
-        {
-            const auto& bone = skeleton.bones[i];
-            auto forward_vector = geom::Quaternion::from_rotation_matrix(matrices[i]) * geom::Vector3::unit_y();
-            debug_shader.draw_line(
-                g_camera, 
-                matrices[i].translation() + world.translation(),
-                matrices[i].translation() + world.translation() + forward_vector * 0.1f,
-                0.02f,
-                graphics::Colour::blue());
-        }
-    };
 
     while (true)
     {

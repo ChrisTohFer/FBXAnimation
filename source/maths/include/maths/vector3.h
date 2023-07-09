@@ -125,6 +125,8 @@ namespace geom
 
     inline Vector3 operator/(const Vector3& lhs, float rhs)
     {
+        _ASSERT(rhs != 0.f);
+
         return {
             lhs.x / rhs,
             lhs.y / rhs,
@@ -177,7 +179,7 @@ namespace geom
     inline Vector3 Vector3::normalized() const
     {
         float m = magnitude();
-        if (m == 0)
+        if (m == 0.f)
         {
             return zero();
         }

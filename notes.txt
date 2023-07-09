@@ -15,7 +15,3 @@ next:
 		-Animations
 	
 	-Scan assets folder for files of each type
-	-Load assets on demand
-	
-	Animation
-	-Find what causes bones to periodically disappear (possibly NaNs, but why?)

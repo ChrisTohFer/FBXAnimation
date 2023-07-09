@@ -194,6 +194,8 @@ namespace geom
                 q = { m.get(2, 1) - m.get(1, 2), m.get(0, 2) - m.get(2, 0), m.get(1, 0) - m.get(0, 1), t };
             }
         }
+
+        _ASSERT(t != 0.f);
         q = q * (0.5f / sqrtf(t));
 
         return q;
@@ -218,7 +220,10 @@ namespace geom
 
     inline Quaternion Quaternion::normalized() const
     {
-        float scaling = 1.f / sqrtf(x * x + y * y + z * z + w * w);
+        float mag_squared = x * x + y * y + z * z + w * w;
+        _ASSERT(mag_squared != 0.f);
+
+        float scaling = 1.f / sqrtf(mag_squared);
         return { x * scaling, y * scaling, z * scaling, w * scaling };
     }
 
@@ -239,7 +244,7 @@ namespace geom
 
     inline float Quaternion::angle() const
     {
-        return 2.f * acosf(w);
+        return 2.f * acosf(fminf(w, 1.f));
     }
 
     inline float Quaternion::mod_squared() const

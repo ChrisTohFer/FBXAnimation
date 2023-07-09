@@ -272,7 +272,7 @@ namespace
 
             //convert coordinate systems
             transform.translation = right_to_left_hand(transform.translation) * 0.01f;
-            transform.rotation = right_to_left_hand(transform.rotation);
+            transform.rotation = right_to_left_hand(transform.rotation.normalized());
         }
 
         return pose;
