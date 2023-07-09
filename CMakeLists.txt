@@ -62,6 +62,12 @@ add_library(FbxSdk INTERFACE)
 target_include_directories(FbxSdk INTERFACE "external/FBX SDK/2020.0.1/include")
 target_link_libraries(FbxSdk INTERFACE optimized "${CMAKE_CURRENT_SOURCE_DIR}/external/FBX SDK/2020.0.1/lib/vs2017/x64/release/libfbxsdk.lib")
 target_link_libraries(FbxSdk INTERFACE debug "${CMAKE_CURRENT_SOURCE_DIR}/external/FBX SDK/2020.0.1/lib/vs2017/x64/debug/libfbxsdk.lib")
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/FBX SDK/2020.0.1/lib/vs2017/x64/release/libfbxsdk.dll"
+	DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Release")
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/FBX SDK/2020.0.1/lib/vs2017/x64/debug/libfbxsdk.dll"
+	DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Debug")
+file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/external/FBX SDK/2020.0.1/lib/vs2017/x64/debug/libfbxsdk.pdb"
+	DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/Debug")
 target_compile_definitions(FbxSdk INTERFACE "FBXSDK_SHARED")
 
 #third party with source
