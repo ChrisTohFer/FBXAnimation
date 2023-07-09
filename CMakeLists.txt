@@ -54,8 +54,9 @@ project(FbxAnimation)
 
 #third party without source
 add_library(glfw INTERFACE)
-target_include_directories(glfw INTERFACE "external/glfw-3.3.6/glfw-3.3.6/include")
-target_link_libraries(glfw INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw-3.3.6/glfw-3.3.6/build/src/release/glfw3.lib")
+target_include_directories(glfw INTERFACE "external/glfw-3.3.8/include")
+target_link_libraries(glfw INTERFACE optimized "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw-3.3.8/lib/release/glfw3.lib")
+target_link_libraries(glfw INTERFACE debug "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw-3.3.8/lib/debug/glfw3.lib")
 
 add_library(FbxSdk INTERFACE)
 target_include_directories(FbxSdk INTERFACE "external/FBX SDK/2020.0.1/include")
