@@ -1,6 +1,6 @@
 #pragma once
 
-#include "animation/anim_pose.h"
+#include "animation/animation.h"
 
 #include <fbxsdk.h>
 #include <glad/glad.h>

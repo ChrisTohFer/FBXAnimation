@@ -1,4 +1,5 @@
 #include "fbx_wrapper.h"
+#include "maths/geometry.h"
 
 #include <iostream>
 

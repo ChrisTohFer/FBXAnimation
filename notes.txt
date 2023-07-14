@@ -9,9 +9,16 @@ opengl screenspace coords:
 
 next:
 	File management
+	-Add serialize/deserialize functions to skeleton + animation + mesh
 	-Convert fbx files to other file types via separate program
 		-Skeleton
 		-Mesh
 		-Animations
+	-Auto discover files
+	-Load on demand
 	
-	-Scan assets folder for files of each type
+	Graphics
+	-lighting and textures
+	
+	Audio
+	-Find a library to handle playing simple audio files?

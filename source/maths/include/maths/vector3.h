@@ -42,6 +42,9 @@ namespace geom
 
     //operators
 
+    bool operator==(const Vector3& lhs, const Vector3& rhs);
+    bool operator!=(const Vector3& lhs, const Vector3& rhs);
+
     Vector3 operator-(const Vector3& value);
 
     Vector3 operator+(const Vector3& lhs, const Vector3& rhs);
@@ -66,6 +69,19 @@ namespace geom
 namespace geom
 {
     //inline operator definitions
+
+    inline bool operator==(const Vector3& lhs, const Vector3& rhs)
+    {
+        return
+            lhs.x == rhs.x &&
+            lhs.y == rhs.y &&
+            lhs.z == rhs.z;
+    }
+
+    inline bool operator!=(const Vector3& lhs, const Vector3& rhs)
+    {
+        return !(lhs == rhs);
+    }
 
     inline Vector3 operator-(const Vector3& value)
     {

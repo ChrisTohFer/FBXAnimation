@@ -38,6 +38,9 @@ namespace geom
 
     //operators
 
+    bool operator==(const Quaternion& lhs, const Quaternion& rhs);
+    bool operator!=(const Quaternion& lhs, const Quaternion& rhs);
+
     Quaternion operator+(const Quaternion& lhs, const Quaternion& rhs);
     Quaternion operator*(const Quaternion& lhs, const Quaternion& rhs);
 }
@@ -50,6 +53,20 @@ namespace geom
 namespace geom
 {
     //inline operator definitions
+
+    inline bool operator==(const Quaternion& lhs, const Quaternion& rhs)
+    {
+        return
+            lhs.x == rhs.x &&
+            lhs.y == rhs.y &&
+            lhs.z == rhs.z &&
+            lhs.w == rhs.w;
+    }
+
+    inline bool operator!=(const Quaternion& lhs, const Quaternion& rhs)
+    {
+        return !(lhs == rhs);
+    }
 
     inline Quaternion operator+(const Quaternion& lhs, const Quaternion& rhs)
     {
